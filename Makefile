@@ -377,7 +377,7 @@ movies/create-indexes: ##@movies Create indexes
 	$(DOCKER) exec -it $(APP) \
 	./bin/curl -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
-		-d 'statement=CREATE INDEX idx_movies_genres ON playground.sample.movies(DISTINCT ARRAY genres)'
+		-d 'statement=CREATE INDEX idx_movies_genres ON playground.sample.movies(DISTINCT ARRAY v FOR v IN genres END)'
 
 .PHONY: movies/import
 movies/import: ##@movies Import movies into the playground bucket

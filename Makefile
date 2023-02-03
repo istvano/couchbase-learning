@@ -150,6 +150,8 @@ endif
 $(eval $(call defw,DOMAINS,couchbase.lan *.couchbase.lan))
 MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 
+$(eval $(call defw,NODES,main east west))
+MAIN_NODE=$(shell echo $(NODES) | awk '{print $$1}')
 
 # === END USER OPTIONS ===
 
@@ -240,11 +242,17 @@ network/delete: ##@Docker delete network
 
 .PHONY: volume/create
 volume/create: ##@Docker create volume
-	$(DOCKER) volume inspect $(ENV)_couchbase || $(DOCKER) volume create $(ENV)_couchbase
+	@for n in $(NODES) ; do \
+		echo "Creating volume $(ENV)_couchbase_$$n"; \
+		$(DOCKER) volume inspect $(ENV)_couchbase_$$n || $(DOCKER) volume create $(ENV)_couchbase_$$n; \
+	done
 
 .PHONY: volume/delete
 volume/delete: ##@Docker delete volume
-	$(DOCKER) volume inspect $(ENV)_couchbase && $(DOCKER) volume rm $(ENV)_couchbase
+	@for n in $(NODES) ; do \
+		echo "Deleting volume $(ENV)_couchbase_$$n"; \
+		$(DOCKER) volume inspect $(ENV)_couchbase_$$n && $(DOCKER) volume rm $(ENV)_couchbase_$$n; \
+	done
 
 # .PHONY: build
 # build:  ##@Docker build docker image
@@ -288,9 +296,9 @@ up: ##@dev Start docker container
 	$(DOCKER) run -it -d --rm \
 		--env-file=./.env \
 		--network $(ENV)_couchbase \
-		--name="$(APP)" \
+		--name="$(APP)_$(MAIN_NODE)" \
 		--mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env \
-		-v $(ENV)_couchbase:/opt/couchbase/var \
+		-v $(ENV)_couchbase_$(MAIN_NODE):/opt/couchbase/var \
 		-w /opt/couchbase \
 		-p 8091-8094:8091-8094  \
 		-p 11210:11210  \
@@ -299,15 +307,31 @@ up: ##@dev Start docker container
 
 .PHONY: down
 down: ##@dev Kill docker container
-	$(DOCKER) stop "$(APP)"
+	$(DOCKER) stop "$(APP)_$(MAIN_NODE)"
+
+.PHONY: cluster/up
+cluster/up: ##@dev Start docker containers cluster
+	@c=8; for n in $(NODES) ; do \
+		low=$$c"091"; \
+		high=$$c"094"; \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  $(DOCKER_IMAGE):$(VERSION); \
+		((c=$$c+1)) ; \
+	done
+
+.PHONY: cluster/down
+cluster/down: ##@dev Delete docker containers cluster
+	@for n in $(NODES) ; do \
+		$(DOCKER) stop "$(APP)_$$n"; \
+	done
+
 
 .PHONY: ssh
 ssh: ##@dev SSH docker container
-	$(DOCKER) exec -it $(APP) bash 
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) bash 
 
 .PHONY: log/tail
 log/tail: ##@log LOG tail
-	$(DOCKER) exec -it $(APP) tail /opt/couchbase/var/lib/couchbase/logs/info.log
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) tail /opt/couchbase/var/lib/couchbase/logs/info.log
 
 .PHONY: console
 console: ##@dev Open web console
@@ -317,18 +341,60 @@ console: ##@dev Open web console
 
 .PHONY: setup/cluster-init
 setup/cluster-init: ##@setup Init cluster
-	$(DOCKER) exec -it $(APP) \
-	./bin/couchbase-cli cluster-init -c 127.0.0.1 \
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli cluster-init \
+		-c couchbase://$$IP \
+		--cluster-name $$CLUSTER_NAME \
   		--cluster-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--cluster-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
   		--services data,index,query \
   		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
   		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
-  		--index-storage-setting default 
+  		--index-storage-setting default \
+		--node-to-node-encryption off \
+	)
+
+.PHONY: setup/cluster-add-workers
+setup/cluster-add-workers: ##@setup Add workers to an existing cluster
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_east` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		--server-add $$IP \
+  		--services data,index,query \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+	)
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_west` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		--server-add $$IP \
+  		--services data,index,query \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+	)
+
+.PHONY: setup/cluster-rebalance
+setup/cluster-rebalance: ##@setup Rebalance the cluster
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli rebalance \
+		--cluster http://127.0.0.1 \
+		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 
 .PHONY: setup/create-user
 setup/create-user: ##@setup Create User
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli user-manage \
 		--cluster http://127.0.0.1 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
@@ -341,7 +407,7 @@ setup/create-user: ##@setup Create User
 
 .PHONY: movies/create-bucket
 movies/create-bucket: ##@movies Create bucket
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli bucket-create -c localhost:8091 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
 		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
@@ -351,7 +417,7 @@ movies/create-bucket: ##@movies Create bucket
 
 .PHONY: movies/create-scope
 movies/create-scope: ##@movies Create scope within the bucket
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli collection-manage  -c localhost:8091 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
 		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
@@ -360,7 +426,7 @@ movies/create-scope: ##@movies Create scope within the bucket
 
 .PHONY: movies/create-collection
 movies/create-collection: ##@movies Create collection within scope
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli collection-manage  -c localhost:8091 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
 		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
@@ -369,21 +435,21 @@ movies/create-collection: ##@movies Create collection within scope
 
 .PHONY: movies/create-indexes
 movies/create-indexes: ##@movies Create indexes
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/curl -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d 'statement=CREATE PRIMARY INDEX `#primary` ON `playground`.`sample`.`movies`'
 
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/curl -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d 'statement=CREATE INDEX idx_movies_genres ON playground.sample.movies(DISTINCT ARRAY v FOR v IN genres END)'
 
 .PHONY: movies/import
 movies/import: ##@movies Import movies into the playground bucket
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 		bash -c "curl https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json  > /tmp/movies.json"
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	/opt/couchbase/bin/cbimport json -c couchbase://127.0.0.1 \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME -p $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		--scope-collection-exp sample.movies \
@@ -391,14 +457,14 @@ movies/import: ##@movies Import movies into the playground bucket
 
 .PHONY: movies/query
 movies/query: ##@movies Run a query to filter out commedies
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/curl -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d "statement=SELECT * FROM playground.sample.movies AS movies WHERE ANY v IN genres SATISFIES v = 'Comedy' END LIMIT 10"
 
 .PHONY: sample/import-cb-sample
 sample/import-cb-sample: ##@sample Import sample data from CB
-	$(DOCKER) exec -it $(APP) \
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/curl -v http://localhost:8091/sampleBuckets/install \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d '["travel-sample", "beer-sample"]'

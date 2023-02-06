@@ -150,7 +150,7 @@ endif
 $(eval $(call defw,DOMAINS,couchbase.lan *.couchbase.lan))
 MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 
-$(eval $(call defw,NODES,main east west))
+$(eval $(call defw,NODES,main east west misc))
 MAIN_NODE=$(shell echo $(NODES) | awk '{print $$1}')
 
 # === END USER OPTIONS ===
@@ -379,6 +379,22 @@ setup/cluster-add-workers: ##@setup Add workers to an existing cluster
   		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		--server-add $$IP \
   		--services data,index,query \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+	)
+
+.PHONY: setup/cluster-add-misc-node
+setup/cluster-add-misc-node: ##@setup Add misc node to run search,analytics,eventing and backup
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_misc` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		--server-add $$IP \
+  		--services fts,backup,eventing,analytics \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \

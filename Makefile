@@ -177,6 +177,10 @@ dns/remove: ##@dns Delete dns entries
 
 ### CERTS
 
+.PHONY: init
+init: tls/create-cert tls/trust-cert network/create dns/insert## Running init tasks (create tls, dns and network)
+	@echo "Init completed"
+
 .PHONY: tls/create-cert
 tls/create-cert:  ##@tls Create self sign certs for local machine
 	@echo "Creating self signed certificate"
@@ -191,7 +195,7 @@ tls/create-cert:  ##@tls Create self sign certs for local machine
 
 
 .PHONY: delete-from-store
-tls/delete-from-store:
+tls/delete-from-store: ##@tls delete self sign certs for local machine
 	@[ -d ~/.pki/nssdb ] || mkdir -p ~/.pki/nssdb
 	@(if [ -z $(shell certutil -d sql:$$HOME/.pki/nssdb -L | grep '$(MAIN_DOMAIN) cert authority' | head -n1 | awk '{print $$1;}') ]; \
 	then \
@@ -289,10 +293,10 @@ push-latest:
 push-tag:
 	$(DOCKER) push $(DOCKER_REPO)/$(APP):$(VERSION)
 
-### DEVELOPMENT
+### STACK
 
-.PHONY: up
-up: ##@dev Start docker container
+.PHONY: single/up
+single/up: ##@single Start docker container
 	$(DOCKER) run -it -d --rm \
 		--env-file=./.env \
 		--network $(ENV)_couchbase \
@@ -305,12 +309,14 @@ up: ##@dev Start docker container
 		-p 18091-18094:18091-18094  \
 		$(DOCKER_IMAGE):$(VERSION)
 
-.PHONY: down
-down: ##@dev Kill docker container
+.PHONY: single/down
+single/down: ##@single Kill docker container
 	$(DOCKER) stop "$(APP)_$(MAIN_NODE)"
 
+### CLUSTER
+
 .PHONY: cluster/up
-cluster/up: ##@dev Start docker containers cluster
+cluster/up: ##@cluster Start docker containers cluster
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
@@ -319,11 +325,10 @@ cluster/up: ##@dev Start docker containers cluster
 	done
 
 .PHONY: cluster/down
-cluster/down: ##@dev Delete docker containers cluster
+cluster/down: ##@cluster Delete docker containers cluster
 	@for n in $(NODES) ; do \
 		$(DOCKER) stop "$(APP)_$$n"; \
 	done
-
 
 .PHONY: cluster/bucket/list
 cluster/bucket/list: ##@cluster List buckets
@@ -349,22 +354,22 @@ cluster/server/info: ##@cluster Show server info
 	--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   	--password $$COUCHBASE_ADMINISTRATOR_PASSWORD
 
-.PHONY: ssh
-ssh: ##@dev SSH docker container
+.PHONY: node/ssh
+node/ssh: ##@node SSH docker container
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) bash 
 
-.PHONY: log/tail
-log/tail: ##@log LOG tail
+.PHONY: node/log
+node/log: ##@node LOG tail
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) tail /opt/couchbase/var/lib/couchbase/logs/info.log
 
-.PHONY: console
-console: ##@dev Open web console
+.PHONY: node/console
+node/console: ##@node Open web console
 	$(OPEN) http://localhost:8091
 
 ### SETUP
 
-.PHONY: setup/cluster-init
-setup/cluster-init: ##@setup Init cluster
+.PHONY: setup/init
+setup/init: ##@setup Init cluster
 	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
 	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli cluster-init \
@@ -379,8 +384,8 @@ setup/cluster-init: ##@setup Init cluster
 		--node-to-node-encryption off \
 	)
 
-.PHONY: setup/cluster-add-workers
-setup/cluster-add-workers: ##@setup Add workers to an existing cluster
+.PHONY: setup/worker/add
+setup/worker/add: ##@setup Add workers to an existing cluster
 	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
 	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_east` \
 	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
@@ -408,8 +413,8 @@ setup/cluster-add-workers: ##@setup Add workers to an existing cluster
   		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 	)
 
-.PHONY: setup/cluster-add-misc-node
-setup/cluster-add-misc-node: ##@setup Add misc node to run search,analytics,eventing and backup
+.PHONY: setup/misc/add
+setup/misc/add: ##@setup Add misc node to run search,analytics,eventing and backup
 	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
 	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_misc` \
 	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
@@ -425,7 +430,7 @@ setup/cluster-add-misc-node: ##@setup Add misc node to run search,analytics,even
 	)
 
 .PHONY: setup/cluster-rebalance
-setup/cluster-rebalance: ##@setup Rebalance the cluster
+setup/rebalance: ##@setup Rebalance the cluster
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli rebalance \
 		--cluster http://127.0.0.1 \
@@ -445,8 +450,51 @@ setup/create-user: ##@setup Create User
 		--roles mobile_sync_gateway[*] \
 		--auth-domain local
 
+.PHONY: setup/sample/import
+setup/sample/import: ##@sample Import sample data from CB
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/curl -v http://localhost:8091/sampleBuckets/install \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		-d '["gamesim-sample","travel-sample", "beer-sample"]'
+
+### PERFORMANCE
+
+.PHONY: perf/bucket/create
+perf/bucket/create: ##@perf Create bucket for performance tests
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli bucket-create -c localhost:8091 \
+		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		--bucket performance \
+		--bucket-ramsize 100 \
+		--bucket-replica 0 \
+  		--enable-flush 1 \
+  		--enable-index-replica 0 \
+		--bucket-type couchbase \
+		--wait 
+
+.PHONY: perf/bucket/delete
+perf/bucket/delete: ##@perf delete the performance tests bucket
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli delete-create -c localhost:8091 \
+		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		--bucket performance \
+		--wait
+
+.PHONY: perf/document/create
+perf/document/create: ##@perf delete the performance tests bucket
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/cbworkloadgen -n localhost:8091 \
+		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		--bucket performance \
+		-i 500000
+
+### MOVIES
+
 .PHONY: movies/create-bucket
-movies/create-bucket: ##@movies Create bucket
+movies/bucket/create: ##@movies Create bucket
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli bucket-create -c localhost:8091 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
@@ -457,7 +505,7 @@ movies/create-bucket: ##@movies Create bucket
 		--wait 
 
 .PHONY: movies/create-scope
-movies/create-scope: ##@movies Create scope within the bucket
+movies/scope/create: ##@movies Create scope within the bucket
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli collection-manage  -c localhost:8091 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
@@ -466,7 +514,7 @@ movies/create-scope: ##@movies Create scope within the bucket
 		--create-scope sample
 
 .PHONY: movies/create-collection
-movies/create-collection: ##@movies Create collection within scope
+movies/collection/create: ##@movies Create collection within scope
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli collection-manage  -c localhost:8091 \
 		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
@@ -475,7 +523,7 @@ movies/create-collection: ##@movies Create collection within scope
 		--create-collection sample.movies
 
 .PHONY: movies/create-indexes
-movies/create-indexes: ##@movies Create indexes
+movies/index/create: ##@movies Create indexes
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/curl -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
@@ -503,18 +551,7 @@ movies/query: ##@movies Run a query to filter out commedies
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d "statement=SELECT * FROM playground.sample.movies AS movies WHERE ANY v IN genres SATISFIES v = 'Comedy' END LIMIT 10"
 
-.PHONY: sample/import-cb-sample
-sample/import-cb-sample: ##@sample Import sample data from CB
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/curl -v http://localhost:8091/sampleBuckets/install \
-		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
-		-d '["gamesim-sample","travel-sample", "beer-sample"]'
-
 ### MISC
-
-.PHONY: init
-init: tls/create-cert network/create tls/trust-cert dns/insert## Running init tasks
-	@echo "Init completed"
 
 .PHONY: synctime
 synctime: ##@misc Sync VM time

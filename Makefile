@@ -325,6 +325,30 @@ cluster/down: ##@dev Delete docker containers cluster
 	done
 
 
+.PHONY: cluster/bucket/list
+cluster/bucket/list: ##@cluster List buckets
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli bucket-list \
+	-c couchbase://127.0.0.1 \
+	--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  	--password $$COUCHBASE_ADMINISTRATOR_PASSWORD
+
+.PHONY: cluster/server/list
+cluster/server/list: ##@cluster List servers
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-list \
+	-c couchbase://127.0.0.1 \
+	--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  	--password $$COUCHBASE_ADMINISTRATOR_PASSWORD
+
+.PHONY: cluster/server/info
+cluster/server/info: ##@cluster Show server info
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-info \
+	-c couchbase://127.0.0.1 \
+	--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  	--password $$COUCHBASE_ADMINISTRATOR_PASSWORD
+
 .PHONY: ssh
 ssh: ##@dev SSH docker container
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) bash 
@@ -429,7 +453,8 @@ movies/create-bucket: ##@movies Create bucket
 		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		--bucket $$COUCHBASE_BUCKET \
 		--bucket-ramsize $$COUCHBASE_BUCKET_RAMSIZE \
-		--bucket-type couchbase
+		--bucket-type couchbase \
+		--wait 
 
 .PHONY: movies/create-scope
 movies/create-scope: ##@movies Create scope within the bucket
@@ -483,7 +508,7 @@ sample/import-cb-sample: ##@sample Import sample data from CB
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/curl -v http://localhost:8091/sampleBuckets/install \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
-		-d '["travel-sample", "beer-sample"]'
+		-d '["gamesim-sample","travel-sample", "beer-sample"]'
 
 ### MISC
 

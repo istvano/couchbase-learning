@@ -121,6 +121,9 @@ CRT_FILENAME=tls.pem
 KEY_FILENAME=tls.key
 DOCKER_BUILD_ARGS=
 
+BUCKET=travel-sample
+KEY=airline_10
+
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
 $(eval $(call defw,NAMESPACES,couchbase))
@@ -307,6 +310,7 @@ single/up: ##@single Start docker container
 		-p 8091-8094:8091-8094  \
 		-p 11210:11210  \
 		-p 18091-18094:18091-18094  \
+		--health-cmd "curl --fail http://localhost:8091/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s \
 		$(DOCKER_IMAGE):$(VERSION)
 
 .PHONY: single/down
@@ -320,7 +324,7 @@ cluster/up: ##@cluster Start docker containers cluster
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  $(DOCKER_IMAGE):$(VERSION); \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "curl --fail http://localhost:8091/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
 		((c=$$c+1)) ; \
 	done
 
@@ -354,6 +358,33 @@ cluster/server/info: ##@cluster Show server info
 	--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   	--password $$COUCHBASE_ADMINISTRATOR_PASSWORD
 
+.PHONY: stat/bucket
+stat/bucket: ##@stat Show DCB statistics
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/cbstats 127.0.0.1:11210 \
+	dcp \
+	-b $(BUCKET) \
+	-u $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  	-p $$COUCHBASE_ADMINISTRATOR_PASSWORD
+
+.PHONY: stat/all
+stat/all: ##@stat Show vBucket stats
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/cbstats 127.0.0.1:11210 \
+	all \
+	-b $(BUCKET) \
+	-u $$COUCHBASE_ADMINISTRATOR_USERNAME \
+  	-p $$COUCHBASE_ADMINISTRATOR_PASSWORD
+
+.PHONY: node/hash
+node/hash: ##@node hash a given key
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/cbc hash  \
+	$(KEY) \
+	-U http://localhost/$(BUCKET) \
+	-u $$COUCHBASE_ADMINISTRATOR_USERNAME \
+	-P $$COUCHBASE_ADMINISTRATOR_PASSWORD
+
 .PHONY: node/ssh
 node/ssh: ##@node SSH docker container
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) bash 
@@ -377,7 +408,7 @@ setup/init: ##@setup Init cluster
 		--cluster-name $$CLUSTER_NAME \
   		--cluster-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--cluster-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
-  		--services data,index,query \
+  		--services data,index,query,fts \
   		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
   		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
   		--index-storage-setting default \
@@ -394,7 +425,7 @@ setup/worker/add: ##@setup Add workers to an existing cluster
   		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		--server-add $$IP \
-  		--services data,index,query \
+  		--services data,index,query,fts \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
@@ -407,7 +438,7 @@ setup/worker/add: ##@setup Add workers to an existing cluster
   		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		--server-add $$IP \
-  		--services data,index,query \
+  		--services data,index,query,fts \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
@@ -423,7 +454,7 @@ setup/misc/add: ##@setup Add misc node to run search,analytics,eventing and back
   		--username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--password $$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		--server-add $$IP \
-  		--services fts,backup,eventing,analytics \
+  		--services backup,eventing,analytics \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_ADMINISTRATOR_USERNAME \
   		--server-add-password $$COUCHBASE_ADMINISTRATOR_PASSWORD \

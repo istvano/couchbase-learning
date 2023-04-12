@@ -120,9 +120,14 @@ TLS=$(ETC)/tls
 CRT_FILENAME=tls.pem
 KEY_FILENAME=tls.key
 DOCKER_BUILD_ARGS=
+CURL_OPTS=
 
-BUCKET=travel-sample
-KEY=airline_10
+# Default params
+API_ENDPOINT?=http://localhost:8091
+PERMISSION?=cluster.admin.diag!read,cluster.admin.diag!write,cluster.admin.setup!write,cluster.admin.security!read,cluster.admin.security!write,cluster.admin.security.local!read,cluster.admin.security.local!write,cluster.admin.security.admin!write,cluster.admin.security.admin!read,cluster.admin.security.external!write,cluster.admin.security.external!read,cluster.admin.logs!read,cluster.admin.internal!all,cluster.admin.internal.stats!read,cluster.admin.internal.xdcr!read,cluster.admin.internal.xdcr!write,cluster.settings.indexes!write,cluster.admin.memcached!read,cluster.admin.memcached!write,cluster.admin.settings!read,cluster.admin.settings!write,cluster.logs!read,cluster.logs.fts!read,cluster.pools!read,cluster.pools!write,cluster.nodes!read,cluster.nodes!write,cluster.samples!read,cluster.settings!read,cluster.settings!write,cluster.settings.indexes!read,cluster.tasks!read,cluster.stats!read,cluster.stats.fts!read,cluster.server_groups!read,cluster.server_groups!write,cluster.indexes!read,cluster.indexes!write,cluster.xdcr.settings!read,cluster.xdcr.settings!write,cluster.xdcr.remote_clusters!read,cluster.xdcr.remote_clusters!write,cluster.xdcr.internal!read,cluster.xdcr.internal!write,cluster.analytics!select,cluster.analytics!manage,cluster.analytics!backup,cluster.fts!read,cluster.backup!all,cluster.eventing.functions!manage,cluster.settings.autocompaction!read,cluster.settings.autocompaction!write,cluster.settings!read,cluster.settings!write,cluster.settings.metrics!read,cluster.settings.metrics!write,cluster.settings.fts!read,cluster.settings.fts!write,cluster.n1ql.meta!read,cluster.n1ql.udf!manage,cluster.n1ql.udf_external!manage,cluster.n1ql.udf_external!execute,cluster.n1ql.udf!execute,cluster.n1ql.curl!execute,cluster.buckets!create,cluster.bucket[*]!create,cluster.bucket[*]!delete,cluster.bucket[*]!compact,cluster.bucket[*]!flush,cluster.bucket[*].settings!read,cluster.bucket[*].settings!write,cluster.bucket[*].recovery!write,cluster.bucket[*].recovery!read,cluster.bucket[*].password!read,cluster.bucket[*].data!read,cluster.bucket[*].data!write,cluster.bucket[*].data.docs!read,cluster.bucket[*].data.docs!write,cluster.bucket[*].data.docs!upsert,cluster.bucket[*].data.docs!delete,cluster.bucket[*].data.dcp!read,cluster.bucket[*].data.dcpstream!read,cluster.bucket[*].data.xattr!read,cluster.bucket[*].recovery!read,cluster.bucket[*].recovery!write,cluster.bucket[*].views!read,cluster.bucket[*].views!write,cluster.bucket[*].views!compact,cluster.bucket[*].xdcr!read,cluster.bucket[*].xdcr!write,cluster.bucket[*].xdcr!execute,cluster.bucket[*].n1ql.select!execute,cluster.bucket[*].n1ql.index!read,cluster.bucket[*].n1ql.index!write,cluster.bucket[*].n1ql.index!list,cluster.bucket[*].n1ql.udf!manage,cluster.bucket[*].n1ql.udf!execute,cluster.bucket[*].n1ql.meta!backup,cluster.bucket[*].analytics!manage,cluster.bucket[*].stats!read,cluster.bucket[*].fts!read,cluster.bucket[*].fts!write,cluster.bucket[*].data.dcpstream!read,cluster.bucket[*].collections!read,cluster.bucket[*].collections!write,cluster.scope[*:*].analytics!select,cluster.scope[*:*].data.dcpstream!read,cluster.scope[*:*].data.docs!read,cluster.scope[*:*].data.docs!write,cluster.scope[*:*].data.docs!upsert,cluster.scope[*:*].stats!read,cluster.scope[*:*].collections!read,cluster.scope[*:*].collections!write,cluster.scope[*:*].n1ql.index!read,cluster.scope[*:*].n1ql.index!write,cluster.scope[*:*].n1ql.index!list,cluster.scope[*:*].n1ql.select!execute,cluster.scope[*:*].n1ql.udf!manage,cluster.scope[*:*].n1ql.udf!execute,cluster.collection[*:*:*].analytics!select,cluster.collection[*:*:*].data.dcpstream!read,cluster.collection[*:*:*].data.docs!read,cluster.collection[*:*:*].data.docs!write,cluster.collection[*:*:*].data.docs!upsert,cluster.collection[*:*:*].data.docs!delete,cluster.collection[*:*:*].stats!read,cluster.collection[*:*:*].stats.fts!read,cluster.collection[*:*:*].fts!read,cluster.collection[*:*:*].fts!write,cluster.collection[*:*:*].collections!read,cluster.collection[*:*:*].collections!write,cluster.collection[*:*:*].n1ql.index!read,cluster.collection[*:*:*].n1ql.index!write,cluster.collection[*:*:*].n1ql.index!list,cluster.collection[*:*:*].n1ql.index!all,cluster.collection[*:*:*].n1ql.index!alter,cluster.collection[*:*:*].n1ql.index!build,cluster.collection[*:*:*].n1ql.index!create,cluster.collection[*:*:*].n1ql.index!drop,cluster.collection[*:*:*].n1ql.select!execute,cluster.collection[*:*:*].n1ql.update!execute,cluster.collection[*:*:*].n1ql.insert!execute,cluster.collection[*:*:*].n1ql.delete!execute,cluster.collection[*:*:*].n1ql.udf_external!manage,cluster.collection[*:*:*].n1ql.udf!manage,cluster.collection[*:*:*].eventing.function!manage,cluster.admin.stats_export!read,cluster.sgw.dev_ops!read,cluster.sgw.dev_ops!write,cluster.sgw.dev_ops!all,cluster.sgw.dev_ops!manage,cluster.admin.stats_export!read,cluster.admin.memcached.idle!write,cluster.settings.fts!manage,cluster.xdcr.developer!read,cluster.ui!read,cluster.sgw.dev_ops!all,cluster.eventing!all,cluster.analytics!all,cluster.buckets!all,cluster.bucket[*]!all,cluster.bucket[*]!read,cluster.bucket[*].n1ql.index!create,cluster.bucket[*].n1ql.index!build,cluster.bucket[*].settings.indexes!read,cluster.bucket[*].data!all,cluster.bucket[*].data.meta!read,cluster.bucket[*].data.meta!write,cluster.bucket[*].data.sxattr!read,cluster.bucket[*].data.sxattr!write,cluster.bucket[*].views!all,cluster.bucket[*].fts!manage,cluster.bucket[*].n1ql.index!all,cluster.bucket[*].n1ql!execute,cluster.collection[*:*:*].n1ql.udf!execute,cluster.collection[*:*:*].n1ql.udf_external!execute,cluster.collection[*:*:*].collections!all,cluster.collection[*:_system:*].data!read,cluster.collection[*:*:*].sgw!all,cluster.collection[*:*:*].sgw.replications!all,cluster.collection[*:*:*].sgw.auth!configure,cluster.collection[*:*:*].sgw.principal!read,cluster.collection[*:*:*].sgw.principal!write,cluster.collection[*:*:*].sgw.appdata!read,cluster.collection[*:*:*].sgw.appdata!write,cluster.collection[*:*:*].sgw.principal_appdata!read,cluster.collection[*:*:*].data.docs!insert,cluster.collection[*:*:*].data.docs!range_scan,cluster.collection[*:*:*].data.sxattr!read
+
+BUCKET?=travel-sample
+KEY?=airline_10
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
@@ -131,6 +136,7 @@ $(eval $(call defw,DEFAULT_NAMESPACE,$(shell echo $(NAMESPACES) | awk '{print $$
 $(eval $(call defw,ENV,$(ENV)))
 $(eval $(call defw,CLUSTER_NAME,$(shell basename $(MFILECWD))))
 $(eval $(call defw,DOCKER,docker))
+$(eval $(call defw,CURL,curl))
 $(eval $(call defw,COMPOSE,docker-compose))
 $(eval $(call defw,UNAME,$(UNAME_S)-$(UNAME_P)))
 
@@ -155,6 +161,9 @@ MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 
 $(eval $(call defw,NODES,main east west misc))
 MAIN_NODE=$(shell echo $(NODES) | awk '{print $$1}')
+
+ROLES=admin ro_admin security_admin_local security_admin_external cluster_admin eventing_admin backup_admin replication_admin query_system_catalog query_external_access query_manage_global_functions query_execute_global_functions query_manage_global_external_functions query_execute_global_external_functions analytics_reader analytics_admin sync_gateway_dev_ops external_stats_reader
+BUCKET_ROLES=bucket_admin scope_admin bucket_full_access views_admin views_reader data_reader data_writer data_dcp_reader data_backup data_monitoring fts_admin fts_searcher query_select query_update query_insert query_delete query_manage_index query_manage_functions query_execute_functions query_manage_external_functions query_execute_external_functions replication_target analytics_manager analytics_select mobile_sync_gateway sync_gateway_configurator sync_gateway_app sync_gateway_app_ro sync_gateway_replicator eventing_manage_functions
 
 # === END USER OPTIONS ===
 
@@ -310,7 +319,7 @@ single/up: ##@single Start docker container
 		-p 8091-8094:8091-8094  \
 		-p 11210:11210  \
 		-p 18091-18094:18091-18094  \
-		--health-cmd "curl --fail http://localhost:8091/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s \
+		--health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s \
 		$(DOCKER_IMAGE):$(VERSION)
 
 .PHONY: single/down
@@ -324,7 +333,7 @@ cluster/up: ##@cluster Start docker containers cluster
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "curl --fail http://localhost:8091/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
 		((c=$$c+1)) ; \
 	done
 
@@ -395,7 +404,7 @@ node/log: ##@node LOG tail
 
 .PHONY: node/console
 node/console: ##@node Open web console
-	$(OPEN) http://localhost:8091
+	$(OPEN) $(API_ENDPOINT)
 
 ### SETUP
 
@@ -484,7 +493,7 @@ setup/create-user: ##@setup Create User
 .PHONY: setup/sample/import
 setup/sample/import: ##@sample Import sample data from CB
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/curl -v http://localhost:8091/sampleBuckets/install \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/sampleBuckets/install \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d '["gamesim-sample","travel-sample", "beer-sample"]'
 
@@ -556,12 +565,12 @@ movies/collection/create: ##@movies Create collection within scope
 .PHONY: movies/create-indexes
 movies/index/create: ##@movies Create indexes
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/curl -v http://localhost:8093/query/service \
+	$(CURL) $(CURL_OPTS) -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d 'statement=CREATE PRIMARY INDEX `#primary` ON `playground`.`sample`.`movies`'
 
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/curl -v http://localhost:8093/query/service \
+	$(CURL) $(CURL_OPTS) -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d 'statement=CREATE INDEX idx_movies_genres ON playground.sample.movies(DISTINCT ARRAY v FOR v IN genres END)'
 
@@ -578,9 +587,120 @@ movies/import: ##@movies Import movies into the playground bucket
 .PHONY: movies/query
 movies/query: ##@movies Run a query to filter out commedies
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/curl -v http://localhost:8093/query/service \
+	$(CURL) $(CURL_OPTS) -v http://localhost:8093/query/service \
 		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
 		-d "statement=SELECT * FROM playground.sample.movies AS movies WHERE ANY v IN genres SATISFIES v = 'Comedy' END LIMIT 10"
+### Rest
+
+.PHONY: rest/rbac/whoami
+rest/rbac/whoami: ##@rest Get whoami
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/whoami \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD | jq
+
+.PHONY: rest/rbac/roles
+rest/rbac/roles: ##@rest Get the roles
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/roles \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD | jq	
+
+.PHONY: rest/rbac/users
+rest/rbac/users: ##@rest Get the users
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/users \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD | jq	
+
+.PHONY: rest/rbac/groups
+rest/rbac/groups: ##@rest Get the groups
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/groups \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD | jq
+
+.PHONY: rest/rbac/create-user-per-roles
+rest/rbac/create-user-per-roles: ##@rest Create a user for every role		
+	@for v in $(ROLES) ; do \
+		echo "Creating user: $$v"; \
+		ROLE_STR="roles=$$v&password=password"; \
+		$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(CURL_OPTS) -X PUT $(API_ENDPOINT)/settings/rbac/users/local/$$v \
+			-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+			-d $$ROLE_STR; \
+	done
+	@for v in $(BUCKET_ROLES) ; do \
+		echo "Creating user: $$v"; \
+		ROLE_STR="roles=$$v[*]&password=password"; \
+		$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(CURL_OPTS) -X PUT $(API_ENDPOINT)/settings/rbac/users/local/$$v \
+			-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+			-d $$ROLE_STR; \
+	done
+	@echo "Completed..."
+
+.PHONY: rest/rbac/delete-user-per-roles
+rest/rbac/delete-user-per-roles: ##@rest Create a user for every role
+	@for v in $(ROLES) ; do \
+		echo "Deleting user: $$v"; \
+		ROLE_STR="roles=$$v&password=password"; \
+		$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(CURL_OPTS) -X DELETE $(API_ENDPOINT)/settings/rbac/users/local/$$v \
+			-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD; \
+	done
+	@for v in $(BUCKET_ROLES) ; do \
+		echo "Deleting user: $$v"; \
+		ROLE_STR="roles=$$v&password=password"; \
+		$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(CURL_OPTS) -X DELETE $(API_ENDPOINT)/settings/rbac/users/local/$$v \
+			-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD; \
+	done
+	@echo "Completed..."
+
+.PHONY: rest/rbac/check-perms-all
+rest/rbac/check-perms-all: ##@rest Get user permissions for all users
+	@for v in $(ROLES) ; do \
+		echo "User: $$v"; \
+		$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
+		-u $$v:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		-d '$(PERMISSION)' | jq | grep -E '{|}|true' ;\
+	done
+	@for v in $(BUCKET_ROLES) ; do \
+		echo "User: $$v"; \
+		$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
+		-u $$v:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		-d '$(PERMISSION)' | jq | grep -E '{|}|true' ;\
+	done
+
+
+.PHONY: rest/rbac/check-perms
+rest/rbac/check-perms: ##@rest Get the users
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		-d '$(PERMISSION)' | jq
+
+.PHONY: rest/audit/config
+rest/audit/config: ##@rest Get config
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD | jq
+
+.PHONY: rest/audit/enable
+rest/audit/enable: ##@rest Enable audit
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/settings/audit \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD \
+		-d 'auditdEnabled=true' \
+		-d 'disabled=8243,8255,8257,32770,32771,32772,32780,32783,32784,32785,32786,40963' \
+		-d 'rotateSize=524288000' \
+		-d 'rotateInterval=7200' \
+		-d 'logPath=/opt/couchbase/var/lib/couchbase/logs' | jq
+
+.PHONY: rest/audit/listauditevents
+rest/audit/listauditevents: ##@rest List auditable events
+	@$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit/descriptors \
+		-u $$COUCHBASE_ADMINISTRATOR_USERNAME:$$COUCHBASE_ADMINISTRATOR_PASSWORD | jq
 
 ### MISC
 

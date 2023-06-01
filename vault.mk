@@ -3,6 +3,7 @@ VAULT_ROOT_TOKEN=password
 VAULT_DB_NAME=demo-db
 VAULT_USER=vault-root
 VAULT_PWD=password
+VAULT_LEASE_ID?=
 ALLOWED_ROLES=*
 
 .PHONY: vault/up
@@ -30,7 +31,7 @@ vault/plugin/list: ##@Vault List vault plugins
 # That user must have the appropriate permissions to perform actions upon other database users.
 
 .PHONY: vault/cb/create-user
-vault/cb/create-user: ##@setup Create User
+vault/cb/create-user: ##@Vault Create User
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli user-manage \
 		--cluster http://127.0.0.1 \
@@ -69,6 +70,10 @@ vault/role/read-dynamic: ##@Vault Read a dynamic role
 .PHONY: vault/secret/create-dynamic
 vault/secret/create-dynamic: ##@Vault Create a dynamic secret
 	$(DOCKER) exec -it "$(APP)_$(VAULT_NODE)" /bin/ash -c "vault login $(VAULT_ROOT_TOKEN) && vault read database/creds/couchbase-ro-admin-role" 
+
+.PHONY: vault/secret/extend-dynamic
+vault/secret/extend-dynamic: ##@Vault Extend a dynamic role VAULT_LEASE_ID
+	$(DOCKER) exec -it "$(APP)_$(VAULT_NODE)" /bin/ash -c "vault login $(VAULT_ROOT_TOKEN) && vault lease renew -increment=16h database/creds/couchbase-ro-admin-role/$(VAULT_LEASE_ID)" 
 
 
 .PHONY: vault/secret/list

@@ -10,6 +10,8 @@ export $(shell sed 's/=.*//' $(env))
 include ../help.mk
 include ../couchbase.mk
 include ../rbac.mk
+include ../sso.mk
+include ../vault.mk
 
 USERNAME=$(shell whoami)
 UID=$(shell id -u ${USERNAME})
@@ -58,7 +60,6 @@ MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 
 $(eval $(call defw,NODES,main east west misc))
 MAIN_NODE=$(shell echo $(NODES) | awk '{print $$1}')
-OIDC_NODE=oidc
 
 
 # === END USER OPTIONS ===
@@ -473,20 +474,6 @@ rest/audit/enable: ##@rest Enable audit
 rest/audit/listauditevents: ##@rest List auditable events
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit/descriptors \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
-
-### Identity
-.PHONY: oidc/idp/up
-oidc/idp/up: ##@oidc Start idp
-	$(DOCKER) run -it --rm \
-		--env-file=./.env \
-		--network $(ENV)_couchbase \
-		--name="$(APP)_$(OIDC_NODE)" \
-		--mount type=bind,source=$(MFILECWD)/../etc/oidc/cb-realm.json,target=/opt/keycloak/data/import/cb-realm.json \
-		-p 8080:8080 -p 8443:8443 \
-		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
-		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
-		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
-		start-dev --import-realm
 
 ### MISC
 

@@ -2,9 +2,13 @@
 CRT_FILENAME?=tls.pem
 KEY_FILENAME?=tls.key
 
-.PHONY: init
-init: tls/create-cert tls/trust-cert network/create volume/create dns/insert## Running init tasks (create tls, dns and network)
+.PHONY: init ## Running init tasks (create tls, dns and network)
+init: tls/create-cert tls/trust-cert network/create volume/create ## Running init tasks (create tls, dns and network)
 	@echo "Init completed"
+
+.PHONY: cleanup
+cleanup: network/delete volume/delete ## Running cleanup tasks tasks (dns and network)
+	@echo "Cleanup completed"
 
 ### DNS
 

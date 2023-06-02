@@ -18,7 +18,7 @@ UID=$(shell id -u ${USERNAME})
 GID=$(shell id -g ${USERNAME})
 
 MFILECWD = $(shell pwd)
-ETC=$(MFILECWD)/etc
+ETC=$(MFILECWD)/../etc
 TLS=$(ETC)/tls
 
 CRT_FILENAME?=tls.pem

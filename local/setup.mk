@@ -1,107 +1,90 @@
+### SETUP
 
-CRT_FILENAME?=tls.pem
-KEY_FILENAME?=tls.key
+.PHONY: setup/init
+setup/init: ##@setup Init cluster
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli cluster-init \
+		-c couchbase://$$IP \
+		--cluster-name $$CLUSTER_NAME \
+  		--cluster-username $$COUCHBASE_USERNAME \
+  		--cluster-password $$COUCHBASE_PASSWORD \
+  		--services data,index,query,fts \
+  		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
+  		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
+  		--index-storage-setting default \
+		--node-to-node-encryption off \
+	)
 
-.PHONY: init
-init: tls/create-cert tls/trust-cert network/create volume/create dns/insert## Running init tasks (create tls, dns and network)
-	@echo "Init completed"
+.PHONY: setup/worker/add
+setup/worker/add: ##@setup Add workers to an existing cluster
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_east` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--server-add $$IP \
+  		--services data,index,query,fts \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_USERNAME \
+  		--server-add-password $$COUCHBASE_PASSWORD \
+	)
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_west` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--server-add $$IP \
+  		--services data,index,query,fts \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_USERNAME \
+  		--server-add-password $$COUCHBASE_PASSWORD \
+	)
 
-### DNS
+.PHONY: setup/misc/add
+setup/misc/add: ##@setup Add misc node to run search,analytics,eventing and backup
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_misc` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--server-add $$IP \
+  		--services backup,eventing,analytics \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_USERNAME \
+  		--server-add-password $$COUCHBASE_PASSWORD \
+	)
 
-.PHONY: dns/insert
-dns/insert: dns/remove ##@dns Create dns
-	@echo "Creating HOST DNS entries for the project ..."
-	@for v in $(DOMAINS) ; do \
-		echo $$v; \
-		sudo -- sh -c -e "echo '$(IP_ADDRESS)	$$v' >> /etc/hosts"; \
-	done
-	@echo "Completed..."
+.PHONY: setup/cluster-rebalance
+setup/rebalance: ##@setup Rebalance the cluster
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli rebalance \
+		--cluster http://127.0.0.1 \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
 
-.PHONY: dns/remove
-dns/remove: ##@dns Delete dns entries
-	@echo "Removing HOST DNS entries ..."
-	@for v in $(DOMAINS) ; do \
-		echo $$v; \
-		sudo -- sh -c "sed -i.bak \"/$(IP_ADDRESS)	$$v/d\" /etc/hosts && rm /etc/hosts.bak"; \
-	done
-	@echo "Completed..."
+.PHONY: setup/create-user
+setup/create-user: ##@setup Create User
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli user-manage \
+		--cluster http://127.0.0.1 \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--set \
+		--rbac-username $$COUCHBASE_RBAC_USERNAME \
+		--rbac-password $$COUCHBASE_RBAC_PASSWORD \
+		--roles mobile_sync_gateway[*] \
+		--auth-domain local
 
-
-### CERTS
-
-.PHONY: tls/create-cert
-tls/create-cert:  ##@tls Create self sign certs for local machine
-	@echo "Creating self signed certificate"
-	docker run -it $(USER_DEF) \
-		--mount "type=bind,src=$(TLS),dst=/home/mkcert" \
-		--mount "type=bind,src=$(TLS),dst=/root/.local/share/mkcert" \
-		istvano/mkcert:latest -install
-	docker run -it $(USER_DEF) \
-		--mount "type=bind,src=$(TLS),dst=/home/mkcert" \
-		--mount "type=bind,src=$(TLS),dst=/root/.local/share/mkcert" \
-		istvano/mkcert:latest -cert-file $(CRT_FILENAME) -key-file $(KEY_FILENAME) $(DOMAINS) localhost 127.0.0.1 ::1
-
-
-.PHONY: delete-from-store
-tls/delete-from-store: ##@tls delete self sign certs for local machine
-	@[ -d ~/.pki/nssdb ] || mkdir -p ~/.pki/nssdb
-	@(if [ -z $(shell certutil -d sql:$$HOME/.pki/nssdb -L | grep '$(MAIN_DOMAIN) cert authority' | head -n1 | awk '{print $$1;}') ]; \
-	then \
-		echo "not exists. skipping delete"; \
-	else \
-		certutil -d sql:$$HOME/.pki/nssdb -D -n '$(MAIN_DOMAIN) cert authority'; \
-		echo "deleted"; \
-	fi)
-	@(if [ -z $(shell certutil -d sql:$$HOME/.pki/nssdb -L | grep '$(MAIN_DOMAIN)' | head -n1 | awk '{print $$1;}') ]; \
-	then \
-		echo "not exists. skipping delete"; \
-	else \
-		certutil -d sql:$$HOME/.pki/nssdb -D -n '$(MAIN_DOMAIN)'; \
-		echo "deleted"; \
-	fi)
-
-.PHONY: tls/trust-cert
-tls/trust-cert: tls/delete-from-store ##@tls Trust self signed cert by local browser
-	@echo "Import self signed cert into user's truststore"
-ifeq ($(UNAME_S),Darwin)
-	sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain $(TLS)/.local/share/mkcert/rootCA.pem
-else
-	@[ -d ~/.pki/nssdb ] || mkdir -p ~/.pki/nssdb
-	@certutil -d sql:$$HOME/.pki/nssdb -A -n '$(MAIN_DOMAIN) cert authority' -i $(TLS)/.local/share/mkcert/rootCA.pem -t TCP,TCP,TCP
-	@certutil -d sql:$$HOME/.pki/nssdb -A -n '$(MAIN_DOMAIN)' -i $(TLS)/tls.pem -t P,P,P
-endif
-	@echo "Import successful..."
-
-
-# ### COMPOSE
-
-# .PHONY: compose/up
-# compose/up:  ##@Compose up
-# 	$(COMPOSE) --project-name=$(PROJECT) up
-
-# .PHONY: compose/ps
-# compose/ps:  ##@Compose show processes
-# 	$(COMPOSE) --project-name=$(PROJECT) ps
-
-### DOCKER
-.PHONY: network/create
-network/create: ##@Docker create network
-	$(DOCKER) network inspect $(ENV)_couchbase || $(DOCKER) network create $(ENV)_couchbase
-
-.PHONY: network/delete
-network/delete: ##@Docker delete network
-	$(DOCKER) network inspect $(ENV)_couchbase && $(DOCKER) network rm $(ENV)_couchbase
-
-.PHONY: volume/create
-volume/create: ##@Docker create volume
-	@for n in $(NODES) ; do \
-		echo "Creating volume $(ENV)_couchbase_$$n"; \
-		$(DOCKER) volume inspect $(ENV)_couchbase_$$n || $(DOCKER) volume create $(ENV)_couchbase_$$n; \
-	done
-
-.PHONY: volume/delete
-volume/delete: ##@Docker delete volume
-	@for n in $(NODES) ; do \
-		echo "Deleting volume $(ENV)_couchbase_$$n"; \
-		$(DOCKER) volume inspect $(ENV)_couchbase_$$n && $(DOCKER) volume rm $(ENV)_couchbase_$$n; \
-	done
+.PHONY: setup/sample/import
+setup/sample/import: ##@sample Import sample data from CB
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/sampleBuckets/install \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d '["gamesim-sample","travel-sample", "beer-sample"]'

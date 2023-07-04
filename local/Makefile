@@ -12,6 +12,7 @@ include init.mk
 include setup.mk
 include ../couchbase.mk
 include ../rbac.mk
+include ../functions.mk
 include ../sso.mk
 include ../vault.mk
 
@@ -280,6 +281,11 @@ rest/audit/enable: ##@rest Enable audit
 .PHONY: rest/audit/listauditevents
 rest/audit/listauditevents: ##@rest List auditable events
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit/descriptors \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
+
+.PHONY: rest/certs/list
+rest/certs/list: ##@certs List certs
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificates \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
 
 ### MISC

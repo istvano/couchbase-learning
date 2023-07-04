@@ -1,40 +1,33 @@
-### Rest
-
-.PHONY: rest/certs
-rest/certs: ##@rest List certs
-	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificates \
-		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
-
 ### rbac
 
-.PHONY: rest/rbac/whoami
-rest/rbac/whoami: ##@rest Get whoami
+.PHONY: rbac/whoami
+rbac/whoami: ##@rest Get whoami
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/whoami \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
 
-.PHONY: rest/rbac/roles
-rest/rbac/roles: ##@rest Get the roles
+.PHONY: rbac/roles
+rbac/roles: ##@rest Get the roles
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/roles \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq	
 
-.PHONY: rest/rbac/permissions
-rest/rbac/permissions: ##@rest Get the permissions for current user
+.PHONY: rbac/permissions
+rbac/permissions: ##@rest Get the permissions for current user
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-d '$(PERMISSION)' | jq ;
 
-.PHONY: rest/rbac/users
-rest/rbac/users: ##@rest Get users
+.PHONY: rbac/users
+rbac/users: ##@rest Get users
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/users \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq	
 
-.PHONY: rest/rbac/groups
-rest/rbac/groups: ##@rest Get the groups
+.PHONY: rbac/groups
+rbac/groups: ##@rest Get the groups
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/groups \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
 
-.PHONY: rest/rbac/create-user-per-roles
-rest/rbac/create-user-per-roles: ##@rest Create a user per role
+.PHONY: rbac/create-user-per-roles
+rbac/create-user-per-roles: ##@rest Create a user per role
 	@for v in $(ROLES) ; do \
 		echo "Creating user: $$v"; \
 		ROLE_STR="roles=$$v&password=password"; \
@@ -51,8 +44,8 @@ rest/rbac/create-user-per-roles: ##@rest Create a user per role
 	done
 	@echo "Completed..."
 
-.PHONY: rest/rbac/delete-user-per-roles
-rest/rbac/delete-user-per-roles: ##@rest Delete a user for every role
+.PHONY: rbac/delete-user-per-roles
+rbac/delete-user-per-roles: ##@rest Delete a user for every role
 	@for v in $(ROLES) ; do \
 		echo "Deleting user: $$v"; \
 		ROLE_STR="roles=$$v&password=password"; \
@@ -67,8 +60,8 @@ rest/rbac/delete-user-per-roles: ##@rest Delete a user for every role
 	done
 	@echo "Completed..."
 
-.PHONY: rest/rbac/check-perms-all
-rest/rbac/check-perms-all: ##@rest Get user permissions for all users
+.PHONY: rbac/check-perms-all
+rbac/check-perms-all: ##@rest Get user permissions for all users
 	@echo "Cluster roles:"
 	@for v in $(ROLES) ; do \
 		echo "User: $$v"; \
@@ -85,8 +78,8 @@ rest/rbac/check-perms-all: ##@rest Get user permissions for all users
 	done
 
 
-.PHONY: rest/rbac/check-perms
-rest/rbac/check-perms: ##@rest Check DB_USER permission against list
+.PHONY: rbac/check-perms
+rbac/check-perms: ##@rest Check DB_USER permission against list
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
 		-u $(DB_USER):$$COUCHBASE_PASSWORD \
 		-d '$(PERMISSION)' | jq

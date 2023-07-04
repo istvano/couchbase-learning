@@ -9,7 +9,7 @@ ALLOWED_ROLES=*
 .PHONY: vault/up
 vault/up: ##@Vault start vault in a container
 	@echo "Please note the root token is '$(VAULT_ROOT_TOKEN)', run vault login first"
-	@$(DOCKER) run --cap-add=IPC_LOCK --name="$(APP)_$(VAULT_NODE)" --rm \
+	$(DOCKER) run --cap-add=IPC_LOCK --name="$(APP)_$(VAULT_NODE)" --rm \
 	--network $(ENV)_couchbase \
 	-e VAULT_DEV_ROOT_TOKEN_ID=$(VAULT_ROOT_TOKEN) \
 	-e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \

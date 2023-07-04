@@ -13,4 +13,4 @@ oidc/idp/up: ##@oidc Start idp
 		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
 		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
-		start-dev --import-realm
+		start-dev --import-realm --proxy edge

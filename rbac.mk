@@ -69,12 +69,14 @@ rest/rbac/delete-user-per-roles: ##@rest Delete a user for every role
 
 .PHONY: rest/rbac/check-perms-all
 rest/rbac/check-perms-all: ##@rest Get user permissions for all users
+	@echo "Cluster roles:"
 	@for v in $(ROLES) ; do \
 		echo "User: $$v"; \
 		$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
 		-u $$v:$$COUCHBASE_PASSWORD \
 		-d '$(PERMISSION)' | jq | grep -E '{|}|true' ;\
 	done
+	@echo "Bucket roles:"
 	@for v in $(BUCKET_ROLES) ; do \
 		echo "User: $$v"; \
 		$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \

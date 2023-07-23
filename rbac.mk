@@ -83,3 +83,10 @@ rbac/check-perms: ##@rest Check DB_USER permission against list
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/checkPermissions \
 		-u $(DB_USER):$$COUCHBASE_PASSWORD \
 		-d '$(PERMISSION)' | jq
+
+.PHONY: settings/list
+settings/list: ##@rest Check settings
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/security/ \
+		-u $(DB_USER):$$COUCHBASE_PASSWORD | jq
+
+

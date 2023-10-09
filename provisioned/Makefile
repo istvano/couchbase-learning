@@ -10,6 +10,7 @@ export $(shell sed 's/=.*//' $(env))
 include ../help.mk
 include ../couchbase.mk
 include ../rbac.mk
+include api.mk
 
 CURL_OPTS?=-k
 

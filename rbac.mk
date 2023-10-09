@@ -89,4 +89,12 @@ settings/list: ##@rest Check settings
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/security/ \
 		-u $(DB_USER):$$COUCHBASE_PASSWORD | jq
 
+.PHONY: settings/rbac/backup
+settings/rbac/backup: ##@users Backup users
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/backup \
+		-u $(DB_USER):$$COUCHBASE_PASSWORD | jq
+
+.PHONY: settings/rbac/restore
+settings/rbac/restore: ##@users Restore users
+	@echo "not documented"
 

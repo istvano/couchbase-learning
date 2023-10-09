@@ -15,6 +15,10 @@ include ../rbac.mk
 include ../functions.mk
 include ../sso.mk
 include ../vault.mk
+include ../security.mk
+include ../admin.mk
+include ../bucket.mk
+include ../settings.mk
 
 USERNAME=$(shell whoami)
 UID=$(shell id -u ${USERNAME})
@@ -56,7 +60,7 @@ ifeq ($(IP_ADDRESS),)
 	IP_ADDRESS=127.0.0.1
 endif
 
-$(eval $(call defw,DOMAINS,couchbase.lan *.couchbase.lan))
+$(eval $(call defw,DOMAINS,couchbase.lan login.couchbase.lan node1.couchbase.lan node2.couchbase.lan node3.couchbase.lan node4.couchbase.lan))
 MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 
 $(eval $(call defw,NODES,main east west misc))
@@ -75,6 +79,7 @@ single/up: ##@single Start docker container
 		--network $(ENV)_couchbase \
 		--name="$(APP)_$(MAIN_NODE)" \
 		--mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env \
+		--add-host login.couchbase.lan:host-gateway \
 		-v $(ENV)_couchbase_$(MAIN_NODE):/opt/couchbase/var \
 		-w /opt/couchbase \
 		-p 8091-8094:8091-8094  \
@@ -94,7 +99,7 @@ cluster/up: ##@cluster Start docker containers cluster
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
 		((c=$$c+1)) ; \
 	done
 

@@ -1,0 +1,10 @@
+{
+  "prefixes": [
+    {
+      "delimiter": "@",
+      "path": "san.email",
+      "prefix": ""
+    }
+  ],
+  "state": "enable"
+}

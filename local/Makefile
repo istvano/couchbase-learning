@@ -288,11 +288,6 @@ rest/audit/listauditevents: ##@rest List auditable events
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit/descriptors \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
 
-.PHONY: rest/certs/list
-rest/certs/list: ##@certs List certs
-	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificates \
-		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq
-
 ### MISC
 
 .PHONY: synctime

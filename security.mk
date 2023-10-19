@@ -5,6 +5,20 @@ sec/password/rotate_internal: ##@security Rotate internal passwords in the clust
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X POST
 
+.PHONY: sec/certs/regenerate
+sec/certs/regenerate: ##@security Regenerate certs
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/controller/regenerateCertificate \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-X POST
+
+.PHONY: sec/certs/loadCAs
+sec/certs/loadCAs: ##@security Load trusted CAs
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/node/controller/loadTrustedCAs \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-X POST
+
 .PHONY: sec/certs/client
 sec/certs/client: ##@security Get client certificates
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
@@ -13,9 +27,9 @@ sec/certs/client: ##@security Get client certificates
 		-X GET | jq
 
 .PHONY: sec/certs/node
-sec/certs/node: ##@security Get certificates
+sec/certs/node: ##@security Get node certificate
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificates \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/127.0.0.1 \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq
 
@@ -25,6 +39,7 @@ sec/certs/ca: ##@security Get trusted ca certs
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/trustedCAs \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq
+
 
 .PHONY: sec/netshoot
 sec/netshoot: ##@security Listening on the looback interface

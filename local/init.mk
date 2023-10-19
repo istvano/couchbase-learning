@@ -45,6 +45,23 @@ tls/create-cert:  ##@tls Create self sign certs for local machine
 		--mount "type=bind,src=$(TLS),dst=/root/.local/share/mkcert" \
 		istvano/mkcert:latest -cert-file $(CRT_FILENAME) -key-file $(KEY_FILENAME) $(DOMAINS) localhost 127.0.0.1 ::1
 
+.PHONY: tls/create-client-cert
+tls/create-client-cert:  ##@tls Create self sign certs for local machine
+	@echo "Creating client signed certificate request"
+	openssl req -new -key $(TLS)/$(KEY_FILENAME) -out $(TLS)/client-user.csr -subj "/CN=clientuser"
+	@echo "Creating client signed certificate"
+	openssl x509 -CA $(TLS)/.local/share/mkcert/rootCA.pem -CAkey $(TLS)/.local/share/mkcert/rootCA-key.pem \
+		-CAcreateserial -days 365 -req -in $(TLS)/client-user.csr \
+		-out $(TLS)/client-user.cert.pem -extfile $(TLS)/client.ext
+	rm $(TLS)/client-user.csr
+	@echo "Client certificate has been created"
+	@echo "Verifying certificate:"
+	openssl verify -trusted $(TLS)/.local/share/mkcert/rootCA.pem $(TLS)/client-user.cert.pem
+
+.PHONY: tls/copy-ca
+tls/copy-ca:  ##@tls Copy CA cert into the container
+	docker exec -it $(APP)_$(MAIN_NODE) bash -c "mkdir -p /opt/couchbase/var/lib/couchbase/inbox/CA"
+	docker cp $(TLS)/.local/share/mkcert/rootCA.pem $(APP)_$(MAIN_NODE):/opt/couchbase/var/lib/couchbase/inbox/CA/clientCA.pem
 
 .PHONY: delete-from-store
 tls/delete-from-store: ##@tls delete self sign certs for local machine
@@ -75,7 +92,6 @@ else
 	@certutil -d sql:$$HOME/.pki/nssdb -A -n '$(MAIN_DOMAIN)' -i $(TLS)/tls.pem -t P,P,P
 endif
 	@echo "Import successful..."
-
 
 # ### COMPOSE
 

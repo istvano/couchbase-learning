@@ -63,6 +63,10 @@ tls/copy-ca:  ##@tls Copy CA cert into the container
 	docker exec -it $(APP)_$(MAIN_NODE) bash -c "mkdir -p /opt/couchbase/var/lib/couchbase/inbox/CA"
 	docker cp $(TLS)/.local/share/mkcert/rootCA.pem $(APP)_$(MAIN_NODE):/opt/couchbase/var/lib/couchbase/inbox/CA/clientCA.pem
 
+.PHONY: stat/cpu
+stat/cpu: ##@stat Get CPU stats
+	curl --insecure -vvv --cacert $(TLS)/.local/share/mkcert/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET "https://localhost:18091/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5"
+
 .PHONY: delete-from-store
 tls/delete-from-store: ##@tls delete self sign certs for local machine
 	@[ -d ~/.pki/nssdb ] || mkdir -p ~/.pki/nssdb

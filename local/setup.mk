@@ -88,3 +88,4 @@ setup/sample/import: ##@sample Import sample data from CB
 	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/sampleBuckets/install \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-d '["gamesim-sample","travel-sample", "beer-sample"]'
+	

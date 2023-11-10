@@ -26,12 +26,26 @@ sec/certs/client: ##@security Get client certificates
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq
 
+.PHONY: sec/certs/client-details
+sec/certs/client-details: ##@security Get client certificates details
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificates/client \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-X GET | jq -r '.[0].pem' | openssl x509 -text
+
 .PHONY: sec/certs/node
 sec/certs/node: ##@security Get node certificate
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/127.0.0.1 \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq
+
+.PHONY: sec/certs/node-details
+sec/certs/node-details: ##@security Get node certificate details
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/127.0.0.1 \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-X GET | jq -r .pem | openssl x509 -text
 
 .PHONY: sec/certs/ca
 sec/certs/ca: ##@security Get trusted ca certs
@@ -40,6 +54,12 @@ sec/certs/ca: ##@security Get trusted ca certs
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq
 
+.PHONY: sec/certs/ca-details
+sec/certs/ca-details: ##@security Get trusted ca certs details
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/trustedCAs \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-X GET | jq -r '.[0].pem' | openssl x509 -text
 
 .PHONY: sec/netshoot
 sec/netshoot: ##@security Listening on the looback interface

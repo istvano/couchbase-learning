@@ -64,7 +64,7 @@ tls/copy-ca:  ##@tls Copy CA cert into the container
 	docker cp $(TLS)/.local/share/mkcert/rootCA.pem $(APP)_$(MAIN_NODE):/opt/couchbase/var/lib/couchbase/inbox/CA/clientCA.pem
 
 .PHONY: stat/cpu
-stat/cpu: ##@stat Get CPU stats
+stat/cpu: ##@stat Get CPU stats using certificate authentication
 	curl --insecure -vvv --cacert $(TLS)/.local/share/mkcert/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET "https://localhost:18091/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5"
 
 .PHONY: delete-from-store

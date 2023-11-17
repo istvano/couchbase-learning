@@ -1,0 +1,104 @@
+{
+    "template": "logstash",
+    "index_patterns": [
+        "logstash-*"
+    ],
+    "settings": {
+        "number_of_shards": 1
+    },
+    "mappings": {
+        "_default_": {
+            "dynamic_templates": [
+              {
+                "strings_as_keywords": {
+                  "match_mapping_type": "string",
+                  "mapping": {
+                    "type": "keyword"
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "@timestamp": {
+                "type": "date"
+              },
+              "auditd_enabled": {
+                "type": "boolean"
+              },
+              "description": {
+                "type": "text"
+              },
+              "hostname": {
+                "type": "keyword"
+              },
+              "id": {
+                "type": "long"
+              },
+              "log_path": {
+                "type": "keyword"
+              },
+              "name": {
+                "type": "keyword"
+              },
+              "rotate_interval": {
+                "type": "long"
+              },
+              "uuid": {
+                "type": "keyword"
+              },
+              "version": {
+                "type": "integer"
+              },
+              "bucket": {
+                "type": "keyword"
+              },
+              "local": {
+                "properties": {
+                  "ip": {
+                    "type": "ip"
+                  },
+                  "port": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "real_userid": {
+                "properties": {
+                  "domain": {
+                    "type": "keyword"
+                  },
+                  "user": {
+                    "type": "keyword"
+                  }
+                }
+              },
+              "remote": {
+                "properties": {
+                  "ip": {
+                    "type": "ip"
+                  },
+                  "port": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "roles": {
+                "type": "keyword"
+              },
+              "sessionid": {
+                "type": "keyword"
+              },
+              "operation": {
+                "type": "keyword"
+              },
+              "doc_id": {
+                "type": "keyword"
+              },
+              "bucket_name": {
+                "type": "keyword"
+              }
+            }
+          }        
+
+    }
+}

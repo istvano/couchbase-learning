@@ -96,12 +96,27 @@ single/down: ##@single Kill docker container
 
 ### CLUSTER
 
+.PHONY: cluster/proxy
+cluster/proxy: ##@cluster Start docker nginx proxy
+	$(DOCKER) run -it -d --rm \
+		--network $(ENV)_couchbase \
+		--name="$(APP)_proxy" \
+		--mount type=bind,source=$(MFILECWD)/../etc/proxy/nginx.conf,target=/etc/nginx/nginx.conf,readonly \
+		--mount type=bind,source=$(MFILECWD)/../etc/proxy/cb.conf,target=/etc/nginx/conf.d/default.conf,readonly \
+		--mount type=bind,source=$(MFILECWD)/../etc/tls/tls.pem,target=/etc/nginx/certs/nginx-selfsigned.crt \
+		--mount type=bind,source=$(MFILECWD)/../etc/tls/tls.key,target=/etc/nginx/certs/nginx-selfsigned.key \
+		-p 4091-4094:4091-4094  \
+		$(PROXY_IMAGE)
+
+cluster/proxy/stop: ##@cluster Stop docker nginx proxy
+	$(DOCKER) stop "$(APP)_proxy"
+
 .PHONY: cluster/up
 cluster/up: ##@cluster Start docker containers cluster
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs/ext --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
 		((c=$$c+1)) ; \
 	done
 

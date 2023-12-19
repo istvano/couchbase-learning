@@ -1,3 +1,12 @@
+.PHONY: func/create/createData
+func/create/createData: ##@function Create function to create data
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/_p/query/query/service \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-H "Content-Type: application/json" \
+		-d '{"statement":"CREATE FUNCTION createAirline(vName) { (INSERT INTO `airline` (KEY, VALUE) VALUES (\"airline_101\", {\"id\": \"airline_101\", \"type\": \"airline\", \"name\": vName, \"iata\": \"SH\", \"icao\": \"SKHH\", \"callsign\": \"SKYHIGH\", \"country\": \"USA\"}))};","query_context":"default:travel-sample.inventory"}'
+
+
 .PHONY: func/create/location
 func/create/location: ##@function Create function location
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \

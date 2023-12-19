@@ -126,6 +126,16 @@ cluster/down: ##@cluster Delete docker containers cluster
 		$(DOCKER) stop "$(APP)_$$n"; \
 	done
 
+.PHONY: cluster/set-alt-address
+cluster/set-alt-address: ##@cluster Set Alternate addresses on the nodes
+	@c=8; for n in $(NODES) ; do \
+		low=$$c"091"; \
+		high=$$c"094"; \
+		echo "$(APP)_$$n"; \
+		$(DOCKER) exec -it "$(APP)_$$n" ./bin/couchbase-cli setting-alternate-address --set --node 127.0.0.1 --hostname 127.0.0.1 --ports mgmt=$$low  -c couchbase://127.0.0.1 --username $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD; \
+		((c=$$c+1)) ; \
+	done
+
 .PHONY: cluster/bucket/list
 cluster/bucket/list: ##@cluster List buckets
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \

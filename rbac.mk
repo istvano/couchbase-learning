@@ -89,6 +89,22 @@ settings/list: ##@rest Check settings
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/security/ \
 		-u $(DB_USER):$$COUCHBASE_PASSWORD | jq
 
+.PHONY: settings/rbac/disable-http-ui
+settings/rbac/disable-http-ui: ##@users Disable UI http access
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/settings/security \
+		-u $(DB_USER):$$COUCHBASE_PASSWORD \
+		-d disableUIOverHttp=true \
+		-d tlsMinVersion=tlsv1.3 | jq
+
+.PHONY: settings/rbac/configure-hashing
+settings/rbac/configure-hashing: ##@users Configure hashing to argon2
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/settings/security \
+		-u $(DB_USER):$$COUCHBASE_PASSWORD \
+		-d scramSha1Enabled=false \
+		-d scramSha256Enabled=false \
+		-d scramSha512Enabled=false \
+		-d passwordHashAlg=argon2id | jq
+
 .PHONY: settings/rbac/backup
 settings/rbac/backup: ##@users Backup users
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/rbac/backup \

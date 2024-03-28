@@ -12,7 +12,7 @@ include ../couchbase.mk
 include ../rbac.mk
 include api.mk
 
-CURL_OPTS?=-k
+CURL_OPTS?=-k -v
 
 $(eval $(call defw,ENV,$(ENV)))
 $(eval $(call defw,DOCKER,docker))

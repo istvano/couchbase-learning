@@ -5,6 +5,7 @@
 
 .env.*
 openapi.generated.yaml
+.DS_Store
 
 # User-specific files
 *.rsuser

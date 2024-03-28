@@ -19,6 +19,8 @@ include ../security.mk
 include ../admin.mk
 include ../bucket.mk
 include ../settings.mk
+include ../docs.mk
+include ../observability.mk
 
 USERNAME=$(shell whoami)
 UID=$(shell id -u ${USERNAME})

@@ -10,6 +10,7 @@ export $(shell sed 's/=.*//' $(env))
 include ../help.mk
 include ../couchbase.mk
 include ../rbac.mk
+include ../tls.mk
 include api.mk
 
 CURL_OPTS?=-k -v
@@ -19,7 +20,6 @@ $(eval $(call defw,DOCKER,docker))
 $(eval $(call defw,CURL,curl))
 $(eval $(call defw,COMPOSE,docker-compose))
 $(eval $(call defw,UNAME,$(UNAME_S)-$(UNAME_P)))
-
 
 .PHONY: rest/buckets
 rest/buckets: ##@rest List buckets

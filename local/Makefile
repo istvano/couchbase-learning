@@ -8,6 +8,7 @@ include $(env)
 export $(shell sed 's/=.*//' $(env))
 
 include ../help.mk
+include ../tls.mk
 include init.mk
 include setup.mk
 include ../couchbase.mk

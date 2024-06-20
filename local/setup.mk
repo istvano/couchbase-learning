@@ -13,7 +13,6 @@ setup/init: ##@setup Init cluster
   		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
   		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
   		--index-storage-setting default \
-		--node-to-node-encryption off \
 	)
 
 .PHONY: setup/worker/add

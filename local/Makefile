@@ -22,6 +22,7 @@ include ../bucket.mk
 include ../settings.mk
 include ../docs.mk
 include ../observability.mk
+include ../kmip.mk
 
 USERNAME=$(shell whoami)
 UID=$(shell id -u ${USERNAME})

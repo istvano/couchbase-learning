@@ -23,6 +23,7 @@ include ../bucket.mk
 include ../settings.mk
 include ../docs.mk
 include ../observability.mk
+include ../kmip.mk
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))

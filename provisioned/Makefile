@@ -7,13 +7,20 @@ env ?= .env
 include $(env)
 export $(shell sed 's/=.*//' $(env))
 
+include ../vars.mk
 include ../help.mk
 include ../couchbase.mk
 include ../rbac.mk
 include ../tls.mk
+include ../security.mk
+include ../backup.mk
 include api.mk
 
-CURL_OPTS?=-k -v
+MFILECWD = $(shell pwd)
+ETC=$(MFILECWD)/../etc
+TLS=$(ETC)/tls
+
+CURL_OPTS?=-k -v --insecure
 
 $(eval $(call defw,ENV,$(ENV)))
 $(eval $(call defw,DOCKER,docker))

@@ -1,7 +1,4 @@
 
-CRT_FILENAME?=tls.pem
-KEY_FILENAME?=tls.key
-
 .PHONY: init ## Running init tasks (create tls, dns and network)
 init: tls/create-cert tls/trust-cert network/create volume/create ## Running init tasks (create tls, dns and network)
 	@echo "Init completed"

@@ -34,7 +34,7 @@ vault/plugin/list: ##@Vault List vault plugins
 vault/cb/create-user: ##@Vault Create User
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli user-manage \
-		--cluster http://127.0.0.1 \
+		--cluster $(API_ENDPOINT) \
 		--username $$COUCHBASE_USERNAME \
 		--password $$COUCHBASE_PASSWORD \
 		--set \

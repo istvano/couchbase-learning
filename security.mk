@@ -14,8 +14,8 @@ sec/certs/regenerate: ##@security Regenerate certs
 
 .PHONY: sec/certs/loadCAs
 sec/certs/loadCAs: ##@security Load trusted CAs
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/node/controller/loadTrustedCAs \
+		--insecure \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X POST
 
@@ -49,15 +49,15 @@ sec/certs/node-details: ##@security Get node certificate details
 
 .PHONY: sec/certs/ca
 sec/certs/ca: ##@security Get trusted ca certs
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/trustedCAs \
+		--insecure \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq
 
 .PHONY: sec/certs/ca-details
 sec/certs/ca-details: ##@security Get trusted ca certs details
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/trustedCAs \
+		--insecure \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X GET | jq -r '.[0].pem' | openssl x509 -text
 

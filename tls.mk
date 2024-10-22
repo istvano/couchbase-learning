@@ -4,28 +4,82 @@ tls/test: ##@tls Check nist compliance
 
 .PHONY: stat/cpu
 stat/cpu: ##@stat Get CPU stats using certificate authentication
-	curl --insecure -vvv --cacert $(TLS)/.local/share/mkcert/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET "https://localhost:18091/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5"
+	curl --insecure -vvv --cacert $(TLS)/.local/share/mkcert/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET $(CURL_OPTS) $(API_ENDPOINT)/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5
 
 
 .PHONY: tls/set-min-version
 tls/set-min-version: ##@tls Set min-version
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli setting-security \
-		--cluster http://127.0.0.1 \
+		--cluster $(API_ENDPOINT) \
 		--username $$COUCHBASE_USERNAME \
 		--password $$COUCHBASE_PASSWORD \
 		--set \
 		--tls-min-version tlsv1.2
 
-.PHONY: tls/get-cypher-info
-tls/get-cypher-info: ##@tls Get security information
+.PHONY: tls/set-enc-level-strict
+tls/set-enc-level-strict: ##@tls Set encryption level strict
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli setting-security \
-		--cluster http://127.0.0.1 \
+		--cluster $(API_ENDPOINT) \
 		--username $$COUCHBASE_USERNAME \
 		--password $$COUCHBASE_PASSWORD \
-		--get \
+		--set \
+		--cluster-encryption-level strict
+
+.PHONY: tls/set-enc-level-all
+tls/set-enc-level-all: ##@tls Set encryption level all
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli setting-security \
+		--cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--set \
+		--cluster-encryption-level all
+
+.PHONY: tls/node2node/enable
+tls/node2node/enable: ##@tls enable cluster node 2 node encryption
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli node-to-node-encryption \
+		--cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--enable
+
+.PHONY: tls/autofailover/disable
+tls/autofailover/disable: ##@tls Disable auto failover
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli setting-autofailover \
+		--cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--enable-auto-failover 0
+
+.PHONY: tls/get-cipher-info
+tls/get-cipher-info: ##@tls Get security information
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli setting-security \
+		--cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--get | jq
+
+
+
+.PHONY: tls/set-cipher-suites
+tls/set-cipher-suites: ##@tls Set ciphers
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli setting-security \
+		--cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--set \
+		--tls-honor-cipher-order 1 \
+		--cipher-suites "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 	| jq 
+
+
+/opt/couchbase/bin/couchbase-cli setting-security -c sd-fxif-3vtm.nam.nsroot.net:8091 -u Administrator -p password 	
 
 ### CERTS
 

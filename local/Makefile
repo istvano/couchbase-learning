@@ -7,6 +7,7 @@ env ?= .env
 include $(env)
 export $(shell sed 's/=.*//' $(env))
 
+include ../vars.mk
 include ../help.mk
 include ../tls.mk
 include init.mk
@@ -22,19 +23,6 @@ include ../bucket.mk
 include ../settings.mk
 include ../docs.mk
 include ../observability.mk
-
-USERNAME=$(shell whoami)
-UID=$(shell id -u ${USERNAME})
-GID=$(shell id -g ${USERNAME})
-
-MFILECWD = $(shell pwd)
-ETC=$(MFILECWD)/../etc
-TLS=$(ETC)/tls
-
-DOCKER_BUILD_ARGS?=
-CURL_OPTS?=
-
-DB_USER?=$(COUCHBASE_USERNAME)
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
@@ -119,7 +107,8 @@ cluster/up: ##@cluster Start docker containers cluster
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094  --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
+		if [[ "$$n" == *"main"* ]]; then extra_ports="-p 18091-18094:18091-18094" ; else extra_ports=""; fi; \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094 $$extra_ports --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
 		((c=$$c+1)) ; \
 	done
 

@@ -64,7 +64,7 @@ setup/misc/add: ##@setup Add misc node to run search,analytics,eventing and back
 setup/rebalance: ##@setup Rebalance the cluster
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli rebalance \
-		--cluster http://127.0.0.1 \
+		--cluster $(API_ENDPOINT) \
 		--username $$COUCHBASE_USERNAME \
 		--password $$COUCHBASE_PASSWORD \
 
@@ -72,7 +72,7 @@ setup/rebalance: ##@setup Rebalance the cluster
 setup/create-user: ##@setup Create User
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli user-manage \
-		--cluster http://127.0.0.1 \
+		--cluster $(API_ENDPOINT) \
 		--username $$COUCHBASE_USERNAME \
 		--password $$COUCHBASE_PASSWORD \
 		--set \

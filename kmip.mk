@@ -70,7 +70,7 @@ kmip/tls/create: ##@kmip create a tls certificate for KMIP server
 		-subj "/C=US/ST=California/L=Santa Clara/O=Acme Inc. /OU=IT Department/CN=admin" \
 		-key /tmp/kmip-client-key.pem \
 		-out /tmp/kmip-client-csr.pem
-	@echo "Server request and key for KMIP created..."
+	@echo "Client request and key for KMIP created..."
 
 	$(DOCKER) run -it --rm \
 	-v $(ETC)/tls:/tmp \
@@ -82,6 +82,18 @@ kmip/tls/create: ##@kmip create a tls certificate for KMIP server
 		-CAkey /tmp/kmip-ca-key.pem
 	@echo "Client certificate for KMIP created..."
 
+	$(DOCKER) run -it --rm \
+	-v $(ETC)/tls:/tmp \
+	--user $(UID):$(UID) \
+	alpine/openssl pkcs12 -export \
+		-inkey /tmp/kmip-client-key.pem \
+		-in /tmp/kmip-client-cert.pem \
+		-certfile /tmp/kmip-ca-cert.pem \
+		-name "kmip-client" \
+		-password pass:password \
+		-out /tmp/kmip-client.p12
+	@echo "Client certificate in p12 format for KMIP created..."
+
 	rm -rf $(ETC)/tls/kmip-server-cert.pem $(ETC)/tls/kmip-server-csr.pem \
 		$(ETC)/tls/kmip-server-key.pem $(ETC)/tls/kmip-client-csr.pem
 
@@ -90,6 +102,9 @@ kmip/up: ##@kmip start kmip in a container
 	@echo "Please note"
 	$(DOCKER) run --cap-add=IPC_LOCK --name="$(APP)_$(KMIP_NODE)" --rm \
 	--network $(ENV)_couchbase \
+	-v $(ETC)/tmp:/tmp \
+	-v $(ETC)/tls/kms.json:/root/cosmian-kms/kms.json \
+	-v $(ETC)/tls/kmip-client.p12:/root/cosmian-kms/kmip-client.p12 \
 	-v $(ETC)/tls/kmip-server.p12:/root/cosmian-kms/kmip-server.p12 \
 	-v $(ETC)/tls/kmip-ca-cert.pem:/root/cosmian-kms/kmip-ca-cert.pem \
 	-p 9998:9998 \
@@ -110,26 +125,23 @@ kmip/ver: ##@kmip Get KMIP software version
 
 .PHONY: kmip/key/create
 kmip/key/create: ##@kmip Create symetric key
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms sym keys create --tag $(SYM_KEY_NAME)
+	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" \
+	ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json \
+	sym keys create --tag $(SYM_KEY_NAME)
 
 .PHONY: kmip/key/encrypt
 kmip/key/encrypt: ##@kmip Encrypt using symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" sh -c 'echo "Hello World!" > /tmp/to_encode.txt'
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms sym encrypt -t $(SYM_KEY_NAME) /tmp/to_encode.txt -o $(ENC_SAMPLE_DATA_FILE)
+	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json sym encrypt -t $(SYM_KEY_NAME) /tmp/to_encode.txt -o $(ENC_SAMPLE_DATA_FILE)
 
 .PHONY: kmip/key/decrypt
 kmip/key/decrypt: ##@kmip Decrypt using symetric key
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms sym decrypt $(ENC_SAMPLE_DATA_FILE) -t $(SYM_KEY_NAME) -o $(UENC_SAMPLE_DATA_FILE)
+	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json sym decrypt $(ENC_SAMPLE_DATA_FILE) -t $(SYM_KEY_NAME) -o $(UENC_SAMPLE_DATA_FILE)
 
 .PHONY: kmip/key/export
 kmip/key/export: ##@kmip Export symetric key
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms sym keys export -t $(SYM_KEY_NAME) /tmp/exprted.key.json
+	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json sym keys export -t $(SYM_KEY_NAME) /tmp/exprted.key.json
 
 .PHONY: kmip/key/getinfo
 kmip/key/getinfo: ##@kmip Get attributes symetric key
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms get-attributes -t $(SYM_KEY_NAME)
-
-
-.PHONY: kmip/key/rekey
-kmip/key/rekey: ##@kmip Rekey symetric key
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms sym keys re-key -t $(SYM_KEY_NAME)
+	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json get-attributes -t $(SYM_KEY_NAME)

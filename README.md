@@ -86,3 +86,11 @@ SELECT * FROM playground.sample.movies AS movies WHERE ANY v IN genres SATISFIES
 ```
 
 to see if the sample data is correct
+
+### KMIP
+
+* you go to the local folder `cd local`
+* create the network `make network/create`
+* create certs for kmip `make kmip/tls/create`
+* start kmip container `make kmip/up`
+* check if kmip works `make kmip/ver`

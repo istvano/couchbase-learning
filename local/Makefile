@@ -24,6 +24,7 @@ include ../settings.mk
 include ../docs.mk
 include ../observability.mk
 include ../kmip.mk
+include ../perf.mk
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
@@ -192,40 +193,6 @@ node/log: ##@node LOG tail
 node/console: ##@node Open web console
 	$(OPEN) $(API_ENDPOINT)
 
-
-### PERFORMANCE
-
-.PHONY: perf/bucket/create
-perf/bucket/create: ##@perf Create bucket for performance tests
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/couchbase-cli bucket-create -c localhost:8091 \
-		--username $$COUCHBASE_USERNAME \
-		--password $$COUCHBASE_PASSWORD \
-		--bucket performance \
-		--bucket-ramsize 100 \
-		--bucket-replica 0 \
-  		--enable-flush 1 \
-  		--enable-index-replica 0 \
-		--bucket-type couchbase \
-		--wait 
-
-.PHONY: perf/bucket/delete
-perf/bucket/delete: ##@perf delete the performance tests bucket
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/couchbase-cli delete-create -c localhost:8091 \
-		--username $$COUCHBASE_USERNAME \
-		--password $$COUCHBASE_PASSWORD \
-		--bucket performance \
-		--wait
-
-.PHONY: perf/document/create
-perf/document/create: ##@perf delete the performance tests bucket
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/cbworkloadgen -n localhost:8091 \
-		--username $$COUCHBASE_USERNAME \
-		--password $$COUCHBASE_PASSWORD \
-		--bucket performance \
-		-i 500000
 
 ### MOVIES
 

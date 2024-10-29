@@ -5,6 +5,29 @@ sec/password/rotate_internal: ##@security Rotate internal passwords in the clust
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-X POST
 
+.PHONY: sec/password/policy_no_user
+sec/password/policy_no_user: ##@security Change password policy for an uninitialized cluster
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/settings/passwordPolicy \
+		-X POST \
+		-d minLength=8 \
+		-d enforceUppercase=false \
+		-d enforceLowercase=false \
+		-d enforceDigits=false \
+		-d enforceSpecialChars=false
+
+.PHONY: sec/password/policy
+sec/password/policy: ##@security Change password policy with initialized cluster
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/settings/passwordPolicy \
+		-X POST \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d minLength=8 \
+		-d enforceUppercase=false \
+		-d enforceLowercase=false \
+		-d enforceDigits=false \
+		-d enforceSpecialChars=false
+
 .PHONY: sec/certs/regenerate
 sec/certs/regenerate: ##@security Regenerate certs
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \

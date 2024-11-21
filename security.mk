@@ -10,7 +10,7 @@ sec/password/policy_no_user: ##@security Change password policy for an uninitial
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/settings/passwordPolicy \
 		-X POST \
-		-d minLength=8 \
+		-d minLength=32 \
 		-d enforceUppercase=false \
 		-d enforceLowercase=false \
 		-d enforceDigits=false \

@@ -31,3 +31,9 @@ cluster/node/services: ##@cluster Get Node services
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/nodeServices \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq	
 
+.PHONY: cluster/node/eval
+cluster/node/eval: ##@cluster Run diag eval to increase the max prefixes for TLS
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/diag/eval \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d "ns_config:set({menelaus_web_cert, max_prefixes}, 100)"

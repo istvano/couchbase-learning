@@ -8,7 +8,7 @@ SSO_REALM?=cb
 SSO_CLIENT?=test-client
 
 .PHONY: oidc/idp/up
-oidc/idp/up: ##@oidc Start idp
+idp/up: ##@idp Start idp
 	$(DOCKER) run -it --rm \
 		--env-file=./.env \
 		--network $(ENV)_couchbase \
@@ -24,8 +24,8 @@ oidc/idp/up: ##@oidc Start idp
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
 		start-dev --import-realm 
 
-.PHONY: oidc/token
-oidc/token: ##@oidc Get access token
+.PHONY: idp/oidc/token
+idp/oidc/token: ##@idp Get access token
 	$(CURL) -X POST '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/openid-connect/token' \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-d 'grant_type=password' \
@@ -33,11 +33,23 @@ oidc/token: ##@oidc Get access token
 	-d 'username=$(SSO_USER)' \
 	-d 'password=$(SSO_PWD)' | jq
 
-.PHONY: oidc/token/raw
-oidc/token/raw: ##@oidc Get access token and decode it
+.PHONY: idp/oidc/token/raw
+idp/oidc/token/raw: ##@idp Get access token and decode it
 	$(CURL) -X POST '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/openid-connect/token' \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-d 'grant_type=password' \
 	-d 'client_id=$(SSO_CLIENT)' \
 	-d 'username=$(SSO_USER)' \
 	-d 'password=$(SSO_PWD)' | jq -r '.access_token' | cut -d '.' -f2 | base64 --decode
+
+.PHONY: idp/oidc/jwks
+idp/oidc/jwks: ##@idp Get the jwks endpoint
+	$(CURL) -X GET '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/openid-connect/certs' | jq .
+
+.PHONY: idp/oidc/config
+idp/oidc/config: ##@idp Get the openid config endpoint
+	$(CURL) -X GET '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/.well-known/openid-configuration' | jq .
+
+.PHONY: idp/saml
+idp/saml: ##@idp Get the saml config endpoint
+	$(CURL) -X GET '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/saml/descriptor'

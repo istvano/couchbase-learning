@@ -1,10 +1,6 @@
-.PHONY: tls/test
-tls/test: ##@tls Check nist compliance
+.PHONY: tls/test-comp
+tls/test-comp: ##@tls Check nist compliance
 	$(DOCKER) run --rm -ti  drwetter/testssl.sh $(ENDPOINT)
-
-.PHONY: stat/cpu
-stat/cpu: ##@stat Get CPU stats using certificate authentication
-	curl --insecure -vvv --cacert $(TLS)/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET $(CURL_OPTS) https://localhost:18091/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5
 
 .PHONY: tls/set-min-version
 tls/set-min-version: ##@tls Set min-version
@@ -81,6 +77,24 @@ tls/set-cipher-suites: ##@tls Set ciphers
 /opt/couchbase/bin/couchbase-cli setting-security -c sd-fxif-3vtm.nam.nsroot.net:8091 -u Administrator -p password 	
 
 ### CERTS
+
+.PHONY: tls/create-client-user
+tls/create-client-user:  ##@tls Create tls client user
+	@echo "Creating self signed CA Private key"
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli \
+		user-manage --cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--set \
+		--rbac-username client.user@localhost.lan \
+		--rbac-password $$COUCHBASE_PASSWORD \
+		--roles ro_admin \
+		--auth-domain local
+
+.PHONY: tls/client/test
+tls/client/test: ##@tls Get CPU stats using certificate authentication
+	curl --insecure -vvv --cacert $(TLS)/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET $(CURL_OPTS) https://localhost:18091/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5
 
 .PHONY: tls/create-ca-cert
 tls/create-ca-cert:  ##@tls Create self sign certs for local machine

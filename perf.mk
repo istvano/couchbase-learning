@@ -48,11 +48,11 @@ perf/test/5050: ##@perf Start pillowflight test using 50% read and write workloa
 	cbc-pillowfight --spec "couchbases://$(CONNECT_ENDPOINT)/$(PERFORMANCE_BUCKET)?ssl=no_verify&ipv6=allow&enable_tracing=false" -u $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD --timings --batch-size 1 --random-body --random-body-pool-size 100 --num-items 20000000 --num-threads 128 -m 1024 -M 16384 --collection=$(PERFORMANCE_COLLECTION) --json --set-pct 50 --num-cycles 1000000 --durability majority
 
 .PHONY: perf/ycsb/build
-perf/ycsb/build: ##@ycsb Build container for ycsb
+perf/ycsb/build: ##@perf Build container for ycsb
 	$(DOCKER) build -t $(YCSB_DOCKER_IMAGE)  $(ETC)/ycsb/.
 
 .PHONY: perf/ycsb/build/debug
-perf/ycsb/build/debug: ##@ycsb Build container for ycsb
+perf/ycsb/build/debug: ##@perf Build container for ycsb
 	DOCKER_BUILDKIT=0 $(DOCKER) build --no-cache -t $(YCSB_DOCKER_IMAGE)  $(ETC)/ycsb/.
 
 # Workload A: Update Heavy Workload
@@ -61,7 +61,7 @@ perf/ycsb/build/debug: ##@ycsb Build container for ycsb
 # Purpose: Simulates applications with a balanced mix of read and write operations, such as session stores or user profile updates.
 
 .PHONY: perf/ycsb/runa
-perf/ycsb/runa: ##@ycsb Run workload A
+perf/ycsb/runa: ##@perf Run workload A
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
@@ -81,7 +81,7 @@ perf/ycsb/runa: ##@ycsb Run workload A
 # Purpose: Represents scenarios where applications perform many more reads than writes, such as photo tagging or user-generated content platforms.
 
 .PHONY: perf/ycsb/runb
-perf/ycsb/runb: ##@ycsb Run workload B
+perf/ycsb/runb: ##@perf Run workload B
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \

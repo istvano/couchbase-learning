@@ -94,3 +94,17 @@ to see if the sample data is correct
 * create certs for kmip `make kmip/tls/create`
 * start kmip container `make kmip/up`
 * check if kmip works `make kmip/ver`
+
+
+### Mutual TLS authentication
+
+* you go to the local folder `cd local`
+* you need to create a CA that will be used to sign the client certificate `make tls/create-ca-cert`
+* now you can create the client private key and certificate `make tls/create-client-cert`
+* you need to copy the CA created earlier to the Couchbase index/CA make `make tls/copy-ca`
+* use the couchbase CLI to reload the certs `make tls/loadCAs`
+* create a user with the same name as the one in the certificate `make tls/create-client-user`
+* create a user with the same name as the one in the certificate `make tls/create-client-user`
+* call an endpoint with the mtls settings see `make tls/client/test`
+
+You should check out the **client.ext** file in the tls folder as it has the username 

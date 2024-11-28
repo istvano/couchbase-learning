@@ -50,14 +50,18 @@ network/delete: ##@Docker delete network
 
 .PHONY: volume/create
 volume/create: ##@Docker create volume
-	@for n in $(NODES) ; do \
+	@echo "Create Docker volumes ..."
+	@for v in $(NODES) ; do \
 		echo "Creating volume $(ENV)_couchbase_$$n"; \
-		$(DOCKER) volume inspect $(ENV)_couchbase_$$n || $(DOCKER) volume create $(ENV)_couchbase_$$n; \		
+		$(DOCKER) volume inspect $(ENV)_couchbase_$$n || $(DOCKER) volume create $(ENV)_couchbase_$$n; \
 	done
+	@echo "Completed..."
 
 .PHONY: volume/delete
-volume/delete: ##@Docker delete volume
-	@for n in $(NODES) ; do \
+volume/delete: ##@Docker create volume
+	@echo "Deleting Docker volumes ..."
+	@for v in $(NODES) ; do \
 		echo "Deleting volume $(ENV)_couchbase_$$n"; \
-		$(DOCKER) volume inspect $(ENV)_couchbase_$$n && $(DOCKER) volume rm $(ENV)_couchbase_$$n; \		
+		$(DOCKER) volume inspect $(ENV)_couchbase_$$n && $(DOCKER) volume rm $(ENV)_couchbase_$$n; \
 	done
+	@echo "Completed..."

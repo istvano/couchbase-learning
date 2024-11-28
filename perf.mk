@@ -198,6 +198,22 @@ perf/ycsb/runz: ##@perf Run workload z (75% read, 25% write with uniform distrib
         -e ENABLE_STATS=true \
         $(YCSB_DOCKER_IMAGE)
 
+.PHONY: perf/ycsb/runzz
+perf/ycsb/runzz: ##@perf Run workload zz (75% read, 25% write with uniform distribution)
+	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
+		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
+		-v $(ETC)/tmp:/ycsb/output \
+		-e COUCHBASE_HOSTNAME=$(APP)_main \
+        -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
+        -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
+		-e COUCHBASE_DEBUG=true \
+        -e WORKLOAD=zz \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+        -e ENABLE_STATS=true \
+        $(YCSB_DOCKER_IMAGE)
+
 # Use Cases:
 
 # Workload A: Suitable for applications with high read/write parity like session stores.

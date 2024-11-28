@@ -24,6 +24,17 @@ RUN cp /ycsb/workloads/workloada /ycsb/workloads/workloadz && \
     -e 's/updateproportion=0.5/updateproportion=0.25/g' \
     /ycsb/workloads/workloadz    
 
+    RUN cp /ycsb/workloads/workloada /ycsb/workloads/workloadzz && \
+    sed -i \
+    -e 's/requestdistribution=zipfian/requestdistribution=uniform/g' \
+    -e 's/readproportion=0.5/readproportion=0.75/g' \
+    -e 's/updateproportion=0.5/updateproportion=0.25/g' \
+    -e '$a\fieldlength=128' \
+    -e '$a\fieldcount=24' \
+    -e '$a\readallfields=true' \
+    -e '$a\writeallfields=true' \
+    /ycsb/workloads/workloadzz    
+
 RUN mv /ycsb/conf/db.properties /ycsb/conf/db.properties.orig
 
 # Set default values for YCSB run script options

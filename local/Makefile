@@ -75,7 +75,7 @@ single/up: ##@single Start docker container
 		--mount type=bind,source=$(MFILECWD)/../share,target=/opt/share \
 		--mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs \
 		--add-host login.couchbase.lan:host-gateway \
-		-v $(ENV)_couchbase_$(MAIN_NODE):/opt/couchbase/var \
+		--mount type=bind,source=$(MFILECWD)/../share/data,target=/opt/couchbase/var \
 		-w /opt/couchbase \
 		-p 8091-8094:8091-8094  \
 		-p 11210:11210  \
@@ -110,7 +110,7 @@ cluster/up: ##@cluster Start docker containers cluster
 		low=$$c"091"; \
 		high=$$c"094"; \
 		if [[ "$$n" == *"main"* ]]; then extra_ports="-p 18091-18094:18091-18094" ; else extra_ports=""; fi; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094 $$extra_ports --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" --add-host login.couchbase.lan:host-gateway --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094 $$extra_ports --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE); \
 		((c=$$c+1)) ; \
 	done
 

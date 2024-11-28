@@ -24,12 +24,15 @@ couchbase.password=${COUCHBASE_PASSWORD:-password}
 # couchbase.ca.cert=${COUCHBASE_CA_CERT:-}
 # couchbase.client.cert=${COUCHBASE_CLIENT_CERT:-}
 # couchbase.keystore.type=${COUCHBASE_KEYSTORE_TYPE:-PKCS12}
+# 0 - couchstore, 1 is magma
 couchbase.bucketType=${COUCHBASE_BUCKET_TYPE:-0}
 couchbase.replicaNum=${COUCHBASE_REPLICA_NUM:-1}
 #couchbase.project=${COUCHBASE_PROJECT:-test-project}
 #couchbase.database=${COUCHBASE_DATABASE:-cbdb01}
+# 0 is good default, 3 is "Persist to Majority"
 couchbase.durability=${COUCHBASE_DURABILITY:-0}
 couchbase.adhoc=${COUCHBASE_ADHOC:-false}
+# query service setting https://docs.couchbase.com/server/current/n1ql/n1ql-manage/query-settings.html#queryMaxParallelism
 couchbase.maxParallelism=${COUCHBASE_MAX_PARALLELISM:-0}
 couchbase.kvEndpoints=${COUCHBASE_KV_ENDPOINTS:-4}
 # couchbase.sslMode=${COUCHBASE_SSL_MODE:-false}

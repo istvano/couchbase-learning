@@ -6,8 +6,9 @@ PERFORMANCE_RAMSIZE=1000
 PERFORMANCE_BUCKET=performance
 
 YCSB_DOCKER_IMAGE?=ycsb-couchbase
-YCSB_RECORDS?=2000
-TCSB_OPERATIONS?=5000
+YCSB_RECORDS?=10000000
+YCSB_OPERATIONS?=10000000
+YCSB_BUCKET?=0
 
 ### PERFORMANCE
 
@@ -61,7 +62,7 @@ perf/ycsb/build/debug: ##@perf Build container for ycsb
 # Purpose: Simulates applications with a balanced mix of read and write operations, such as session stores or user profile updates.
 
 .PHONY: perf/ycsb/runa
-perf/ycsb/runa: ##@perf Run workload A
+perf/ycsb/runa: ##@perf Run workload a (high read/write parity, 50% read, 50% update)
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
@@ -70,9 +71,10 @@ perf/ycsb/runa: ##@perf Run workload A
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
         -e WORKLOAD=a \
-        -e RECORDS=20000000 \
-        -e OPERATIONS=1000000000 \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
         -e ENABLE_STATS=true \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         $(YCSB_DOCKER_IMAGE)
 
 # Workload B: Read Mostly Workload
@@ -81,7 +83,7 @@ perf/ycsb/runa: ##@perf Run workload A
 # Purpose: Represents scenarios where applications perform many more reads than writes, such as photo tagging or user-generated content platforms.
 
 .PHONY: perf/ycsb/runb
-perf/ycsb/runb: ##@perf Run workload B
+perf/ycsb/runb: ##@perf Run workload b (reads dominate, 95% reads, 5% updates)
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
@@ -89,9 +91,10 @@ perf/ycsb/runb: ##@perf Run workload B
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
-        -e WORKLOAD=a \
-        -e RECORDS=10000000 \
-        -e OPERATIONS=10000000 \
+        -e WORKLOAD=b \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         -e ENABLE_STATS=true \
         $(YCSB_DOCKER_IMAGE)
 
@@ -100,20 +103,100 @@ perf/ycsb/runb: ##@perf Run workload B
 # Access Pattern: Uniform or Zipfian distribution
 # Purpose: Ideal for caching mechanisms and applications where data is static or infrequently updated.
 
+.PHONY: perf/ycsb/runc
+perf/ycsb/runc: ##@perf Run workload c (read-only like caching layers, 100% read)
+	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
+		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
+		-v $(ETC)/tmp:/ycsb/output \
+		-e COUCHBASE_HOSTNAME=$(APP)_main \
+        -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
+        -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
+		-e COUCHBASE_DEBUG=true \
+        -e WORKLOAD=c \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+        -e ENABLE_STATS=true \
+        $(YCSB_DOCKER_IMAGE)
+
 # Workload D: Read Latest Workload
 # Operation Mix: 95% reads, 5% inserts
 # Access Pattern: Latest distribution (bias towards recently inserted records)
 # Purpose: Simulates applications like news feeds or timeline updates where the most recent data is accessed more frequently.
+
+.PHONY: perf/ycsb/rund
+perf/ycsb/rund: ##@perf Run workload d (prioritize recent data, 95% reads, 5% inserts)
+	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
+		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
+		-v $(ETC)/tmp:/ycsb/output \
+		-e COUCHBASE_HOSTNAME=$(APP)_main \
+        -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
+        -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
+		-e COUCHBASE_DEBUG=true \
+        -e WORKLOAD=d \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+        -e ENABLE_STATS=true \
+        $(YCSB_DOCKER_IMAGE)
 
 # Workload E: Short Ranges
 # Operation Mix: 95% scans, 5% inserts
 # Access Pattern: Sequential access patterns over a range of records
 # Purpose: Represents applications that perform range queries, such as threaded conversations or time-series data.
 
+.PHONY: perf/ycsb/rune
+perf/ycsb/rune: ##@perf Run workload e (analytical applications, 95% scans, 5% inserts)
+	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
+		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
+		-v $(ETC)/tmp:/ycsb/output \
+		-e COUCHBASE_HOSTNAME=$(APP)_main \
+        -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
+        -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
+		-e COUCHBASE_DEBUG=true \
+        -e WORKLOAD=e \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+        -e ENABLE_STATS=true \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+        $(YCSB_DOCKER_IMAGE)
+
 # Workload F: Read-Modify-Write
 # Operation Mix: 50% read-modify-write transactions
 # Access Pattern: Uniform or Zipfian distribution
 # Purpose: Simulates transactions that read a record, perform some logic, and write back the changes, common in user settings updates or inventory systems.
+
+.PHONY: perf/ycsb/runf
+perf/ycsb/runf: ##@perf Run workload f (transactional integrity, 50% read-modify-write)
+	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
+		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
+		-v $(ETC)/tmp:/ycsb/output \
+		-e COUCHBASE_HOSTNAME=$(APP)_main \
+        -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
+        -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
+		-e COUCHBASE_DEBUG=true \
+        -e WORKLOAD=f \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+        -e ENABLE_STATS=true \
+        $(YCSB_DOCKER_IMAGE)
+
+.PHONY: perf/ycsb/runz
+perf/ycsb/runz: ##@perf Run workload z (75% read, 25% write with uniform distribution)
+	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
+		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
+		-v $(ETC)/tmp:/ycsb/output \
+		-e COUCHBASE_HOSTNAME=$(APP)_main \
+        -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
+        -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
+		-e COUCHBASE_DEBUG=true \
+        -e WORKLOAD=z \
+        -e RECORDS=$(YCSB_RECORDS) \
+        -e OPERATIONS=$(YCSB_OPERATIONS) \
+		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+        -e ENABLE_STATS=true \
+        $(YCSB_DOCKER_IMAGE)
 
 # Use Cases:
 

@@ -15,7 +15,14 @@ RUN apt-get update && apt-get install -y curl unzip && \
     mv ycsb-couchbase/* . && \
     rmdir ycsb-couchbase && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*    
+    rm -rf /var/lib/apt/lists/*
+
+RUN cp /ycsb/workloads/workloada /ycsb/workloads/workloadz && \
+    sed -i \
+    -e 's/requestdistribution=zipfian/requestdistribution=uniform/g' \
+    -e 's/readproportion=0.5/readproportion=0.75/g' \
+    -e 's/updateproportion=0.5/updateproportion=0.25/g' \
+    /ycsb/workloads/workloadz    
 
 RUN mv /ycsb/conf/db.properties /ycsb/conf/db.properties.orig
 

@@ -89,8 +89,8 @@ single/down: ##@single Kill docker container
 
 .PHONY: single/delete
 single/delete: ##@single Remove single cluster data
-	rm -f $(MFILECWD)/../share/logs/*.log
-	rm -f $(MFILECWD)/../share/data/lib
+	rm -rf $(MFILECWD)/../share/logs/*.log
+	rm -rf $(MFILECWD)/../share/data/lib
 
 ### CLUSTER
 

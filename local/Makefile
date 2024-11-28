@@ -87,6 +87,11 @@ single/up: ##@single Start docker container
 single/down: ##@single Kill docker container
 	$(DOCKER) stop "$(APP)_$(MAIN_NODE)"
 
+.PHONY: single/delete
+single/delete: ##@single Remove single cluster data
+	rm -f $(MFILECWD)/../share/logs/*.log
+	rm -f $(MFILECWD)/../share/data/lib
+
 ### CLUSTER
 
 .PHONY: cluster/proxy

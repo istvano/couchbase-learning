@@ -10,6 +10,7 @@ YCSB_RECORDS?=10000000
 YCSB_OPERATIONS?=10000000
 YCSB_BUCKET?=0
 YCSB_NODE?=$(APP)_main
+YCSB_MANUAL?=false
 
 ### PERFORMANCE
 
@@ -76,6 +77,7 @@ perf/ycsb/runa: ##@perf Run workload a (high read/write parity, 50% read, 50% up
         -e OPERATIONS=$(YCSB_OPERATIONS) \
         -e ENABLE_STATS=true \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 # Workload B: Read Mostly Workload
@@ -97,6 +99,7 @@ perf/ycsb/runb: ##@perf Run workload b (reads dominate, 95% reads, 5% updates)
         -e OPERATIONS=$(YCSB_OPERATIONS) \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         -e ENABLE_STATS=true \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 # Workload C: Read-Only Workload
@@ -118,6 +121,7 @@ perf/ycsb/runc: ##@perf Run workload c (read-only like caching layers, 100% read
         -e OPERATIONS=$(YCSB_OPERATIONS) \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         -e ENABLE_STATS=true \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 # Workload D: Read Latest Workload
@@ -139,6 +143,7 @@ perf/ycsb/rund: ##@perf Run workload d (prioritize recent data, 95% reads, 5% in
         -e OPERATIONS=$(YCSB_OPERATIONS) \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         -e ENABLE_STATS=true \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 # Workload E: Short Ranges
@@ -160,6 +165,7 @@ perf/ycsb/rune: ##@perf Run workload e (analytical applications, 95% scans, 5% i
         -e OPERATIONS=$(YCSB_OPERATIONS) \
         -e ENABLE_STATS=true \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 # Workload F: Read-Modify-Write
@@ -181,6 +187,7 @@ perf/ycsb/runf: ##@perf Run workload f (transactional integrity, 50% read-modify
         -e OPERATIONS=$(YCSB_OPERATIONS) \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         -e ENABLE_STATS=true \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 .PHONY: perf/ycsb/runz
@@ -196,6 +203,7 @@ perf/ycsb/runz: ##@perf Run workload z (75% read, 25% write with uniform distrib
         -e RECORDS=$(YCSB_RECORDS) \
         -e OPERATIONS=$(YCSB_OPERATIONS) \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         -e ENABLE_STATS=true \
         $(YCSB_DOCKER_IMAGE)
 
@@ -213,6 +221,7 @@ perf/ycsb/runzz: ##@perf Run workload zz (75% read, 25% write with uniform distr
         -e OPERATIONS=$(YCSB_OPERATIONS) \
 		-e COUCHBASE_BUCKET_TYPE=$(YCSB_BUCKET) \
         -e ENABLE_STATS=true \
+		-e MANUAL_MODE=$(YCSB_MANUAL) \
         $(YCSB_DOCKER_IMAGE)
 
 # Use Cases:

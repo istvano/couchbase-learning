@@ -9,6 +9,7 @@ YCSB_DOCKER_IMAGE?=ycsb-couchbase
 YCSB_RECORDS?=10000000
 YCSB_OPERATIONS?=10000000
 YCSB_BUCKET?=0
+YCSB_NODE?=$(APP)_main
 
 ### PERFORMANCE
 
@@ -66,7 +67,7 @@ perf/ycsb/runa: ##@perf Run workload a (high read/write parity, 50% read, 50% up
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -87,7 +88,7 @@ perf/ycsb/runb: ##@perf Run workload b (reads dominate, 95% reads, 5% updates)
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -108,7 +109,7 @@ perf/ycsb/runc: ##@perf Run workload c (read-only like caching layers, 100% read
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -129,7 +130,7 @@ perf/ycsb/rund: ##@perf Run workload d (prioritize recent data, 95% reads, 5% in
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -150,7 +151,7 @@ perf/ycsb/rune: ##@perf Run workload e (analytical applications, 95% scans, 5% i
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -171,7 +172,7 @@ perf/ycsb/runf: ##@perf Run workload f (transactional integrity, 50% read-modify
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -187,7 +188,7 @@ perf/ycsb/runz: ##@perf Run workload z (75% read, 25% write with uniform distrib
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \
@@ -203,7 +204,7 @@ perf/ycsb/runzz: ##@perf Run workload zz (75% read, 25% write with uniform distr
 	$(DOCKER) run -it --rm --network $(ENV)_couchbase \
 		-v $(ETC)/ycsb/entrypoint.sh:/entrypoint.sh \
 		-v $(ETC)/tmp:/ycsb/output \
-		-e COUCHBASE_HOSTNAME=$(APP)_main \
+		-e COUCHBASE_HOSTNAME=$(YCSB_NODE) \
         -e COUCHBASE_USERNAME=$$COUCHBASE_USERNAME \
         -e COUCHBASE_PASSWORD=$$COUCHBASE_PASSWORD \
 		-e COUCHBASE_DEBUG=true \

@@ -1,5 +1,5 @@
 # Start with a base image that includes Java 15
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:17-jre
 
 # Set environment variables for YCSB version and Couchbase SDK version
 ENV YCSB_VERSION=2.0.5

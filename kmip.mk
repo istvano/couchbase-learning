@@ -3,6 +3,8 @@ SYM_KEY_NAME=MySymmetricKey
 ENC_SAMPLE_DATA_FILE=/tmp/sample.enc
 UENC_SAMPLE_DATA_FILE=/tmp/sample.txt
 
+KMIP_IMAGE=kmip-test
+
 .PHONY: kmip/tls/create
 kmip/tls/create: ##@kmip create a tls certificate for KMIP server
 	$(DOCKER) run -it --rm \
@@ -118,6 +120,10 @@ kmip/server/cosmian: ##@kmip start kmip in a container
 	--https-p12-password=password \
 	--authority-cert-file /root/cosmian-kms/kmip-ca-cert.pem
 
+.PHONY: kmip/pykmip/build
+kmip/pykmip/build: ##@kmip Build a pykmip container
+	@$(DOCKER) build -t $(KMIP_IMAGE) $(ETC)/code/kmip
+
 .PHONY: kmip/server/pykmip
 kmip/server/pykmip: ##@kmip Run a kmip server with pykmip
 	$(DOCKER) run --entrypoint=pykmip-server --cap-add=IPC_LOCK --name="$(APP)_$(KMIP_NODE)" --rm \
@@ -132,39 +138,34 @@ kmip/server/pykmip: ##@kmip Run a kmip server with pykmip
 kmip/ssh: ##@kmip Exec into the kmip container 
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" /bin/sh
 
-.PHONY: kmip/server/ver
-kmip/ver: ##@kmip Get KMIP software version
+.PHONY: kmip/cosmian/ver
+kmip/cosmian/ver: ##@kmip Get KMIP software version
 	@$(CURL) --cert $(ETC)/tls/kmip-client-cert.pem \
 		--key $(ETC)/tls/kmip-client-key.pem \
 		--cacert $(ETC)/tls/kmip-ca-cert.pem https://localhost:9998/version
 
-.PHONY: kmip/server/key/create
-kmip/server/key/create: ##@kmip Create symetric key
+.PHONY: kmip/cosmian/key/create
+kmip/cosmian/key/create: ##@kmip Create symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" \
 	ckms --json --accept-invalid-certs=true -c /root/cosmian-kms/kms.json \
 	sym keys create --tag $(SYM_KEY_NAME)
 
-.PHONY: kmip/server/key/encrypt
-kmip/server/key/encrypt: ##@kmip Encrypt using symetric key
+.PHONY: kmip/cosmian/key/encrypt
+kmip/cosmian/key/encrypt: ##@kmip Encrypt using symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" sh -c 'echo "Hello World!" > /tmp/to_encode.txt'
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json sym encrypt -t $(SYM_KEY_NAME) /tmp/to_encode.txt -o $(ENC_SAMPLE_DATA_FILE)
 
-.PHONY: kmip/server/key/decrypt
-kmip/server/key/decrypt: ##@kmip Decrypt using symetric key
+.PHONY: kmip/cosmian/key/decrypt
+kmip/cosmian/key/decrypt: ##@kmip Decrypt using symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json sym decrypt $(ENC_SAMPLE_DATA_FILE) -t $(SYM_KEY_NAME) -o $(UENC_SAMPLE_DATA_FILE)
 
-.PHONY: kmip/server/key/export
-kmip/server/key/export: ##@kmip Export symetric key
+.PHONY: kmip/cosmian/key/export
+kmip/cosmian/key/export: ##@kmip Export symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json sym keys export -t $(SYM_KEY_NAME) /tmp/exprted.key.json
 
-.PHONY: kmip/server/key/getinfo
-kmip/server/key/getinfo: ##@kmip Get attributes symetric key
+.PHONY: kmip/cosmian/key/getinfo
+kmip/cosmian/key/getinfo: ##@kmip Get attributes symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json get-attributes -t $(SYM_KEY_NAME)
-
-
-.PHONY: kmip/client/build
-kmip/container/build: ##@kmip Build a container to test KMIP python code
-	@$(DOCKER) build -t kmip-test $(ETC)/code/kmip
 
 .PHONY: kmip/client/test
 kmip/client/test: ##@kmip Run a test against the KMIP server

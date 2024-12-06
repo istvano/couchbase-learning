@@ -1,5 +1,5 @@
 # Start with a base image that includes Java 15
-FROM eclipse-temurin:17-jre-noble
+FROM eclipse-temurin:21-jre-alpine
 
 # Set environment variables for YCSB version and Couchbase SDK version
 ENV YCSB_VERSION=2.0.5
@@ -8,14 +8,12 @@ ENV YCSB_VERSION=2.0.5
 WORKDIR /ycsb
 
 # Install curl and unzip
-RUN apt-get update && apt-get install -y curl unzip && \
-    curl -OLs https://github.com/couchbaselabs/ycsb-couchbase/releases/download/$YCSB_VERSION/ycsb-couchbase.zip && \
+RUN apk --no-cache add curl unzip
+RUN curl -OLs https://github.com/couchbaselabs/ycsb-couchbase/releases/download/$YCSB_VERSION/ycsb-couchbase.zip && \
     unzip ycsb-couchbase.zip && \
     rm ycsb-couchbase.zip && \
     mv ycsb-couchbase/* . && \
-    rmdir ycsb-couchbase && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rmdir ycsb-couchbase
 
 RUN cp /ycsb/workloads/workloada /ycsb/workloads/workloadz && \
     sed -i \

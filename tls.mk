@@ -1,6 +1,6 @@
 .PHONY: tls/test-comp
 tls/test-comp: ##@tls Check nist compliance
-	$(DOCKER) run --rm -ti  drwetter/testssl.sh $(ENDPOINT)
+	$(DOCKER) run --rm -ti  drwetter/testssl.sh $(INTERNAL_ENDPOINT):$(CONNECT_ENDPOINT_TLS_PORT)
 
 .PHONY: tls/set-min-version
 tls/set-min-version: ##@tls Set min-version

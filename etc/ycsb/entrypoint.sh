@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 
 # Path to properties file
 DB_PROPERTIES_FILE="/ycsb/conf/db.properties"

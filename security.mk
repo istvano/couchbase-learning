@@ -100,3 +100,7 @@ sec/nmap: ##@security Check open ports
 	$(DOCKER) run -it --net=container:$(APP)_$(MAIN_NODE) \
 	nicolaka/netshoot \
 	nmap -sC -sV -Pn -p0-65535 127.0.0.1 -oN server_report
+
+.PHONY: sec/audit/copy-config
+sec/audit/copy-config: ##@security Copy the audit_events.json to etc
+	$(DOCKER) cp $(APP)_$(MAIN_NODE):/opt/couchbase/etc/security/audit_events.json $(MFILECWD)/../etc/audit_events.json

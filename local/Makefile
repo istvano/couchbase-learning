@@ -25,6 +25,7 @@ include ../docs.mk
 include ../observability.mk
 include ../kmip.mk
 include ../perf.mk
+include ../build.mk
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
@@ -58,7 +59,6 @@ MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 
 $(eval $(call defw,NODES,main east west misc))
 MAIN_NODE=$(shell echo $(NODES) | awk '{print $$1}')
-
 
 # === END USER OPTIONS ===
 

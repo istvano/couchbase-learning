@@ -101,6 +101,18 @@ sec/nmap: ##@security Check open ports
 	nicolaka/netshoot \
 	nmap -sC -sV -Pn -p0-65535 127.0.0.1 -oN server_report
 
-.PHONY: sec/audit/copy-config
-sec/audit/copy-config: ##@security Copy the audit_events.json to etc
+.PHONY: sec/audit/config/get
+sec/audit/config/get: ##@security Copy the audit_events.json to etc
 	$(DOCKER) cp $(APP)_$(MAIN_NODE):/opt/couchbase/etc/security/audit_events.json $(MFILECWD)/../etc/audit_events.json
+
+.PHONY: sec/audit/config/put
+sec/audit/config/put: ##@security Copy the audit_events.json back
+	$(DOCKER) cp $(MFILECWD)/../etc/audit_events.json $(APP)_$(MAIN_NODE):/opt/couchbase/etc/security/audit_events.json
+
+.PHONY: sec/audit/config/reload
+sec/audit/config/reload: ##@security Reload audit config data
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+		$(CURL) $(API_ENDPOINT)/diag/eval \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d "[{set, _, X}] = ns_audit_cfg:upgrade_descriptors(), ns_config:set(audit_decriptors, lists:ukeysort(1, X))." \
+		-X POST

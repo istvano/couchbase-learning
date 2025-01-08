@@ -103,8 +103,39 @@ kmip/tls/create: ##@kmip create a tls certificate for KMIP server
 
 # RUST_LOG=info,cosmian=info,cosmian_kms_server=debug,actix_web=info,sqlx::query=error,mysql=info"
 
-.PHONY: kmip/server/cosmian
-kmip/server/cosmian: ##@kmip start kmip in a container
+.PHONY: kmip/pykmip/build
+kmip/pykmip/build: ##@kmip Build a pykmip container
+	@$(DOCKER) build -t $(KMIP_IMAGE) $(ETC)/code/kmip
+
+.PHONY: kmip/pykmip/run
+kmip/pykmip/run: ##@kmip Run a kmip server with pykmip
+	$(DOCKER) run --entrypoint=pykmip-server --cap-add=IPC_LOCK --name="$(APP)_$(KMIP_NODE)" --rm \
+		--network $(ENV)_couchbase \
+		-p 9998:9998 \
+		-v $(ETC)/tls:/certs \
+		-v $(ETC)/code/kmip/kmip-server.conf:/etc/pykmip/server.conf \
+		-v $(ETC)/code/kmip/policy.json:/etc/pykmip/policy/policy.json \
+		kmip-test
+
+.PHONY: kmip/pykmip/test
+kmip/pykmip/test: ##@kmip Run a test against the KMIP server
+	@$(DOCKER) run --rm --network $(ENV)_couchbase \
+		-v $(ETC)/tls:/certs \
+		-v $(ETC)/code/kmip/test_kmip.py:/app/test_kmip.py \
+		-v $(ETC)/code/kmip/pykmip.conf:/etc/pykmip/pykmip.conf \
+		-e KMIP_HOST=$(APP)_$(KMIP_NODE) \
+		-e KMIP_PORT=9998 \
+		-e KMIP_CERT=/certs/kmip-client-cert.pem \
+		-e KMIP_KEY=/certs/kmip-client-key.pem \
+		-e KMIP_CA=/certs/kmip-ca-cert.pem \
+		kmip-test /app/test_kmip.py help
+
+.PHONY: kmip/server/ssh
+kmip/ssh: ##@kmip Exec into the kmip container 
+	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" /bin/sh
+
+.PHONY: kmip/cosmian/run
+kmip/cosmian/run: ##@kmip start kmip in a container
 	@echo "Please note"
 	$(DOCKER) run --cap-add=IPC_LOCK --name="$(APP)_$(KMIP_NODE)" --rm \
 	--network $(ENV)_couchbase \
@@ -119,24 +150,6 @@ kmip/server/cosmian: ##@kmip start kmip in a container
 	--https-p12-file=/root/cosmian-kms/kmip-server.p12 \
 	--https-p12-password=password \
 	--authority-cert-file /root/cosmian-kms/kmip-ca-cert.pem
-
-.PHONY: kmip/pykmip/build
-kmip/pykmip/build: ##@kmip Build a pykmip container
-	@$(DOCKER) build -t $(KMIP_IMAGE) $(ETC)/code/kmip
-
-.PHONY: kmip/server/pykmip
-kmip/server/pykmip: ##@kmip Run a kmip server with pykmip
-	$(DOCKER) run --entrypoint=pykmip-server --cap-add=IPC_LOCK --name="$(APP)_$(KMIP_NODE)" --rm \
-		--network $(ENV)_couchbase \
-		-p 9998:9998 \
-		-v $(ETC)/tls:/certs \
-		-v $(ETC)/code/kmip/kmip-server.conf:/etc/pykmip/server.conf \
-		-v $(ETC)/code/kmip/policy.json:/etc/pykmip/policy/policy.json \
-		kmip-test
-
-.PHONY: kmip/server/ssh
-kmip/ssh: ##@kmip Exec into the kmip container 
-	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" /bin/sh
 
 .PHONY: kmip/cosmian/ver
 kmip/cosmian/ver: ##@kmip Get KMIP software version
@@ -166,19 +179,6 @@ kmip/cosmian/key/export: ##@kmip Export symetric key
 .PHONY: kmip/cosmian/key/getinfo
 kmip/cosmian/key/getinfo: ##@kmip Get attributes symetric key
 	@$(DOCKER) exec -it "$(APP)_$(KMIP_NODE)" ckms --accept-invalid-certs=true -c /root/cosmian-kms/kms.json get-attributes -t $(SYM_KEY_NAME)
-
-.PHONY: kmip/client/test
-kmip/client/test: ##@kmip Run a test against the KMIP server
-	@$(DOCKER) run --rm --network $(ENV)_couchbase \
-		-v $(ETC)/tls:/certs \
-		-v $(ETC)/code/kmip/test_kmip.py:/app/test_kmip.py \
-		-v $(ETC)/code/kmip/pykmip.conf:/etc/pykmip/pykmip.conf \
-		-e KMIP_HOST=$(APP)_$(KMIP_NODE) \
-		-e KMIP_PORT=9998 \
-		-e KMIP_CERT=/certs/kmip-client-cert.pem \
-		-e KMIP_KEY=/certs/kmip-client-key.pem \
-		-e KMIP_CA=/certs/kmip-ca-cert.pem \
-		kmip-test /app/test_kmip.py help
 
 # .PHONY: kmip/client/key/create
 # kmip/client/key/create: ##@kmip Client Create symetric key

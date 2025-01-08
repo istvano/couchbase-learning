@@ -87,14 +87,14 @@ SELECT * FROM playground.sample.movies AS movies WHERE ANY v IN genres SATISFIES
 
 to see if the sample data is correct
 
-### KMIP
+### KMIP with pykmip
 
 * you go to the local folder `cd local`
 * create the network `make network/create`
 * create certs for kmip `make kmip/tls/create`
-<<<<<<< Updated upstream
-* start kmip container `make kmip/up`
-* check if kmip works `make kmip/ver`
+* build kmip container `make kmip/pykmip/build`
+* run pykmip `make kmip/pykmip/run`
+* check if kmip works `make kmip/pykmip/test`
 
 
 ### Mutual TLS authentication
@@ -109,8 +109,3 @@ to see if the sample data is correct
 * call an endpoint with the mtls settings see `make tls/client/test`
 
 You should check out the **client.ext** file in the tls folder as it has the username 
-=======
-* build kmip container `make kmip/pykmip/build`
-* start kmip container `make kmip/server/pykmip`
-* run kmip test `make kmip/client/test`
->>>>>>> Stashed changes

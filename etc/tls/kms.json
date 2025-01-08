@@ -1,0 +1,5 @@
+{
+  "kms_server_url": "https://127.0.0.1:9998",
+  "ssl_client_pkcs12_path": "/root/cosmian-kms/kmip-client.p12",
+  "ssl_client_pkcs12_password": "password"
+}

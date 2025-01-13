@@ -97,6 +97,17 @@ to see if the sample data is correct
 * check if kmip works `make kmip/pykmip/test`
 
 
+### KMIP with cosmian
+
+* you go to the local folder `cd local`
+* create the network `make network/create`
+* create certs for kmip `make kmip/tls/create`
+* run cosmian `make kmip/cosmian/run`
+* check kmip server `make kmip/cosmian/ver`
+* create a symetric key `kmip/cosmian/key/create`
+* encrypt a file `kmip/cosmian/key/encrypt`
+* decrypt a file `kmip/cosmian/key/decrypt`
+
 ### Mutual TLS authentication
 
 * you go to the local folder `cd local`

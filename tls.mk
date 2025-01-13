@@ -101,7 +101,7 @@ tls/server/node2node/enable: ##@tls enable cluster node 2 node encryption
 		--enable
 
 .PHONY: tls/server/node2node/disable
-tls/server/node2node/enable: ##@tls disable cluster node 2 node encryption
+tls/server/node2node/disable: ##@tls disable cluster node 2 node encryption
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli node-to-node-encryption \
 		--cluster $(API_ENDPOINT) \

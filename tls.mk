@@ -25,17 +25,20 @@ tls/server/certs/client/details: ##@tls Get client certificates details
 
 .PHONY: tls/server/certs/node
 tls/server/certs/node: ##@tls Get node certificate
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/127.0.0.1 \
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/$$IP \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-X GET | jq
+		-X GET | jq)
+	
 
 .PHONY: tls/server/certs/node/details
 tls/server/certs/node/details: ##@tls Get node certificate details
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/127.0.0.1 \
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/pools/default/certificate/node/$$IP \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-X GET | jq -r .pem | openssl x509 -text
+		-X GET | jq -r .pem | openssl x509 -text)
 
 .PHONY: tls/server/certs/ca
 tls/server/certs/ca: ##@tls Get trusted ca certs

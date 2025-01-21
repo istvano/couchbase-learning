@@ -26,6 +26,8 @@ include ../observability.mk
 include ../kmip.mk
 include ../perf.mk
 include ../build.mk
+include ../xdcr.mk
+
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
@@ -92,6 +94,33 @@ single/delete: ##@single Remove single cluster data
 	rm -rf $(MFILECWD)/../share/logs/*.{log,bin,txt}
 	rm -rf $(MFILECWD)/../share/data/lib
 
+.PHONY: single/init
+single/init: ##@single Init cluster
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli cluster-init \
+		--cluster couchbase://$$IP \
+		--cluster-name $$CLUSTER_NAME \
+  		--cluster-username $$COUCHBASE_USERNAME \
+  		--cluster-password $$COUCHBASE_PASSWORD \
+  		--services data,index,query,fts \
+  		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
+  		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
+  		--index-storage-setting default \
+	)
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli node-init \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--cluster couchbase://$$IP \
+		--node-init-hostname $$IP)
+
+.PHONY: single/init/ip
+setup/init/ip: ##@single print main node ip
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& echo $$IP)
+
 ### CLUSTER
 
 .PHONY: cluster/proxy
@@ -118,6 +147,75 @@ cluster/up: ##@cluster Start docker containers cluster
 		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" $(EXPOSE_HOST) --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094 $$extra_ports --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
 		((c=$$c+1)) ; \
 	done
+
+.PHONY: cluster/init
+cluster/init: ##@cluster Init cluster
+	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli cluster-init \
+		--cluster couchbase://$$IP \
+		--cluster-name $$CLUSTER_NAME \
+  		--cluster-username $$COUCHBASE_USERNAME \
+  		--cluster-password $$COUCHBASE_PASSWORD \
+  		--services data,index,query,fts \
+  		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
+  		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
+  		--index-storage-setting default \
+	)
+
+.PHONY: cluster/worker/add
+cluster/worker/add: ##@cluster Add workers to an existing cluster
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_east` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--server-add $$IP \
+  		--services data,index,query,fts \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_USERNAME \
+  		--server-add-password $$COUCHBASE_PASSWORD \
+	)
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_west` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--server-add $$IP \
+  		--services data,index,query,fts \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_USERNAME \
+  		--server-add-password $$COUCHBASE_PASSWORD \
+	)
+
+.PHONY: cluster/misc/add
+cluster/misc/add: ##@cluster Add misc node to run search,analytics,eventing and backup
+	@(MAIN_IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
+	&& IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_misc` \
+	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli server-add \
+		-c couchbase://$$MAIN_IP \
+  		--username $$COUCHBASE_USERNAME \
+  		--password $$COUCHBASE_PASSWORD \
+		--server-add $$IP \
+  		--services backup,eventing,analytics \
+  		--index-storage-setting default \
+		--server-add-username $$COUCHBASE_USERNAME \
+  		--server-add-password $$COUCHBASE_PASSWORD \
+	)
+
+.PHONY: cluster/rebalance
+cluster/rebalance: ##@cluster Rebalance the cluster
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli rebalance \
+		--cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+
 
 .PHONY: cluster/down
 cluster/down: ##@cluster Delete docker containers cluster

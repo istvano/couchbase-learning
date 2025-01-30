@@ -1,0 +1,103 @@
+# ========================
+#  OU for People
+# ========================
+dn: ou=people,dc=example,dc=local
+objectClass: organizationalUnit
+ou: people
+
+# ========================
+#  OU for Groups
+# ========================
+dn: ou=groups,dc=example,dc=local
+objectClass: organizationalUnit
+ou: groups
+
+
+# ========================
+#  admin group + user
+# ========================
+dn: uid=adminUser,ou=people,dc=example,dc=local
+objectClass: inetOrgPerson
+uid: adminUser
+uid: adminUserAlias1
+uid: adminUserAlias2
+sn: Admin
+cn: AdminUser
+userPassword: password
+
+dn: cn=admin,ou=groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: admin
+member: uid=adminUser,ou=people,dc=example,dc=local
+
+
+# ========================
+#  readonly group + user
+# ========================
+dn: uid=readUser,ou=people,dc=example,dc=local
+objectClass: inetOrgPerson
+uid: readUser
+uid: readUserAlias1
+uid: readUserAlias2
+sn: Read
+cn: ReadUser
+userPassword: password
+
+dn: cn=readonly,ou=groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: readonly
+member: uid=readUser,ou=people,dc=example,dc=local
+
+
+# ========================
+#  data_read group + user
+# ========================
+dn: uid=dataReadUser,ou=people,dc=example,dc=local
+objectClass: inetOrgPerson
+uid: dataReadUser
+uid: dataReadUserAlias1
+uid: dataReadUserAlias2
+sn: Data
+cn: DataReadUser
+userPassword: password
+
+dn: cn=data_read,ou=groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: data_read
+member: uid=dataReadUser,ou=people,dc=example,dc=local
+
+
+# ========================
+#  data_write group + user
+# ========================
+dn: uid=dataWriteUser,ou=people,dc=example,dc=local
+objectClass: inetOrgPerson
+uid: dataWriteUser
+uid: dataWriteUserAlias1
+uid: dataWriteUserAlias2
+sn: Data
+cn: DataWriteUser
+userPassword: password
+
+dn: cn=data_write,ou=groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: data_write
+member: uid=dataWriteUser,ou=people,dc=example,dc=local
+
+
+# ========================
+#  security group + user
+# ========================
+dn: uid=secUser,ou=people,dc=example,dc=local
+objectClass: inetOrgPerson
+uid: secUser
+uid: secUserAlias1
+uid: secUserAlias2
+sn: Security
+cn: SecurityUser
+userPassword: password
+
+dn: cn=security,ou=groups,dc=example,dc=local
+objectClass: groupOfNames
+cn: security
+member: uid=secUser,ou=people,dc=example,dc=local

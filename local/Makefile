@@ -27,6 +27,7 @@ include ../kmip.mk
 include ../perf.mk
 include ../build.mk
 include ../xdcr.mk
+include ../ldap.mk
 
 
 #space separated string array ->

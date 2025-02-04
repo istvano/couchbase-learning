@@ -28,6 +28,33 @@ sec/password/policy: ##@security Change password policy with initialized cluster
 		-d enforceDigits=false \
 		-d enforceSpecialChars=false
 
+.PHONY: sec/saferedirect/on
+sec/saferedirect/on: ##@security Enable safe redirect
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/internalSettings \
+		-v -k \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d useRelativeWebRedirects=true
+
+.PHONY: sec/saferedirect/off
+sec/saferedirect/off: ##@security Disable safe redirect
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/internalSettings \
+		-v -k \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d useRelativeWebRedirects=false
+
+.PHONY: sec/saferedirect/test
+sec/saferedirect/test: ##@security Safe redirect test
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) --header "Host: SBVA" -v $(API_ENDPOINT)/index.html \
+
+.PHONY: sec/internal/list
+sec/internal/list: ##@security List internal settings
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/internalSettings \
+	-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD
+
 .PHONY: sec/netshoot
 sec/netshoot: ##@security Listening on the looback interface
 	$(DOCKER) run -it --net=container:$(APP)_$(MAIN_NODE) \

@@ -83,6 +83,7 @@ single/up: ##@single Start docker container
 		-p 8091-8094:8091-8094  \
 		-p 11210:11210  \
 		-p 18091-18094:18091-18094  \
+		-p 11207:11207 \
 		--health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s \
 		$(DOCKER_IMAGE):$(VERSION)
 

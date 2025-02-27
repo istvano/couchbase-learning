@@ -51,7 +51,7 @@ network/delete: ##@Docker delete network
 .PHONY: volume/create
 volume/create: ##@Docker create volume
 	@echo "Create Docker volumes ..."
-	@for v in $(NODES) ; do \
+	@for n in $(NODES) ; do \
 		echo "Creating volume $(ENV)_couchbase_$$n"; \
 		$(DOCKER) volume inspect $(ENV)_couchbase_$$n || $(DOCKER) volume create $(ENV)_couchbase_$$n; \
 	done
@@ -60,8 +60,10 @@ volume/create: ##@Docker create volume
 .PHONY: volume/delete
 volume/delete: ##@Docker create volume
 	@echo "Deleting Docker volumes ..."
-	@for v in $(NODES) ; do \
+	@for n in $(NODES) ; do \
 		echo "Deleting volume $(ENV)_couchbase_$$n"; \
 		$(DOCKER) volume inspect $(ENV)_couchbase_$$n && $(DOCKER) volume rm $(ENV)_couchbase_$$n; \
 	done
+	find $(MFILECWD)/../share/logs -mindepth 1 ! -name ".gitignore" -exec rm -rf {} +
+	find $(MFILECWD)/../share/data -mindepth 1 ! -name ".gitignore" -exec rm -rf {} +
 	@echo "Completed..."

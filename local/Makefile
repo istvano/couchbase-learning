@@ -142,12 +142,13 @@ cluster/proxy/stop: ##@cluster Stop docker nginx proxy
 
 .PHONY: cluster/up
 cluster/up: ##@cluster Start docker containers cluster
-	@c=8; for n in $(NODES) ; do \
-		low=$$c"091"; \
-		high=$$c"094"; \
-		if [[ "$$n" == *"main"* ]]; then extra_ports="-p 18091-18094:18091-18094" ; else extra_ports=""; fi; \
-		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" $(EXPOSE_HOST) --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094 $$extra_ports --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
-		((c=$$c+1)) ; \
+	@port=8091; for n in $(NODES) ; do \
+		low=$${port}; \
+		high=$$((port+3)); \
+		tlslow=$$((port+10000)); \
+		tlshigh=$$((port+10003)); \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" $(EXPOSE_HOST) --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p $$low-$$high:8091-8094 -p $$tlslow-$$tlshigh:18091-18094 --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
+		((port=$$port+1000)) ; \
 	done
 
 .PHONY: cluster/init
@@ -230,8 +231,10 @@ cluster/set-alt-address: ##@cluster Set Alternate addresses on the nodes
 	@c=8; for n in $(NODES) ; do \
 		low=$$c"091"; \
 		high=$$c"094"; \
+		nr=$$((c-7)) \
+		node=node$$nr".couchbase.lan"; \
 		echo "$(APP)_$$n"; \
-		$(DOCKER) exec -it "$(APP)_$$n" ./bin/couchbase-cli setting-alternate-address --set --node 127.0.0.1 --hostname 127.0.0.1 --ports mgmt=$$low  -c couchbase://127.0.0.1 --username $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD; \
+		$(DOCKER) exec -it "$(APP)_$$n" ./bin/couchbase-cli setting-alternate-address --set --node 127.0.0.1 --hostname $$node --ports mgmt=$$low  -c couchbase://127.0.0.1 --username $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD; \
 		((c=$$c+1)) ; \
 	done
 

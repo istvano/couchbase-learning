@@ -48,6 +48,24 @@ network/create: ##@Docker create network
 network/delete: ##@Docker delete network
 	$(DOCKER) network inspect $(ENV)_couchbase && $(DOCKER) network rm $(ENV)_couchbase
 
+.PHONY: network/createIps
+network/createIps: ##@Docker create additional local IPSs
+	sudo ifconfig bridge10 create
+	sudo ifconfig bridge10 inet 192.168.99.1  netmask 255.255.255.0 up
+	sudo ifconfig bridge11 create
+	sudo ifconfig bridge11 inet 192.168.99.2  netmask 255.255.255.0 up
+	sudo ifconfig bridge12 create
+	sudo ifconfig bridge12 inet 192.168.99.3  netmask 255.255.255.0 up
+	sudo ifconfig bridge13 create
+	sudo ifconfig bridge13 inet 192.168.99.4  netmask 255.255.255.0 up
+
+.PHONY: network/deleteIps
+network/deleteIps: ##@Docker create additional local IPSs
+	sudo ifconfig bridge10 destroy
+	sudo ifconfig bridge11 destroy
+	sudo ifconfig bridge12 destroy
+	sudo ifconfig bridge13 destroy
+
 .PHONY: volume/create
 volume/create: ##@Docker create volume
 	@echo "Create Docker volumes ..."

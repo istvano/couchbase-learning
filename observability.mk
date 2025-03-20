@@ -37,3 +37,28 @@ cluster/node/eval: ##@cluster Run diag eval to increase the max prefixes for TLS
 	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/diag/eval \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-d "ns_config:set({menelaus_web_cert, max_prefixes}, 100)"
+
+.PHONY: prom/metrics
+prom/metrics: ##@observe Prometheus metrics example
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/pools/default/stats/range \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d '[\
+		{\
+			"metric": [\
+			{"label": "name", "value": "sysproc_cpu_utilization"},\
+			{"label": "proc", "value": "indexer"}\
+			],\
+			"applyFunctions": ["avg"],\
+			"alignTimestamps": true,\
+			"step": 15,\
+			"start": -60\
+		},\
+		{\
+			"metric": [\
+			{"label": "name", "value": "kv_disk_write_queue"},\
+			{"label": "bucket", "value": "travel-sample"}\
+			],\
+			"applyFunctions": ["sum"],\
+			"step": 60,\
+			"start": -300\
+		}]' | jq '.'

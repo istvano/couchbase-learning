@@ -28,7 +28,7 @@ include ../perf.mk
 include ../build.mk
 include ../xdcr.mk
 include ../ldap.mk
-
+include ../scan.mk
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))
@@ -151,6 +151,14 @@ cluster/up: ##@cluster Start docker containers cluster
 		((port=$$port+1000)) ; \
 	done
 
+.PHONY: cluster/up/ip
+cluster/up/ip: ##@cluster Start docker containers cluster using separate ips
+	@ip=1; for n in $(NODES) ; do \
+		echo 192.168.99.$$ip:8091-8094:8091-8094; \
+		$(DOCKER) run -it -d --rm --env-file=./.env --network $(ENV)_couchbase --name="$(APP)_$$n" $(EXPOSE_HOST) --mount type=bind,source=$(MFILECWD)/../share,target=/opt/share --mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env -v $(ENV)_couchbase_$$n:/opt/couchbase/var -w /opt/couchbase -p 192.168.99.$$ip:8091-8094:8091-8094 -p 192.168.99.$$ip:18091-18094:18091-18094 --health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s $(DOCKER_IMAGE):$(VERSION); \
+		((ip=$$ip+1)) ; \
+	done
+
 .PHONY: cluster/init
 cluster/init: ##@cluster Init cluster
 	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
@@ -228,15 +236,18 @@ cluster/down: ##@cluster Delete docker containers cluster
 
 .PHONY: cluster/set-alt-address
 cluster/set-alt-address: ##@cluster Set Alternate addresses on the nodes
-	@c=8; for n in $(NODES) ; do \
-		low=$$c"091"; \
-		high=$$c"094"; \
-		nr=$$((c-7)) \
+	@port=8091; nr=1; for n in $(NODES) ; do \
+		low=$${port}; \
+		high=$$((port+3)); \
+		tlslow=$$((port+10000)); \
+		tlshigh=$$((port+10003)); \
 		node=node$$nr".couchbase.lan"; \
 		echo "$(APP)_$$n"; \
-		$(DOCKER) exec -it "$(APP)_$$n" ./bin/couchbase-cli setting-alternate-address --set --node 127.0.0.1 --hostname $$node --ports mgmt=$$low  -c couchbase://127.0.0.1 --username $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD; \
-		((c=$$c+1)) ; \
+		$(DOCKER) exec -it "$(APP)_$$n" ./bin/couchbase-cli setting-alternate-address --set --node 127.0.0.1 --hostname $$node --ports mgmt=$$low --ports mgmtSSL=$$tlslow -c couchbase://127.0.0.1 --username $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD; \
+		((port=$$port+1000)) ; \
+		((nr++)); \
 	done
+
 
 .PHONY: cluster/bucket/list
 cluster/bucket/list: ##@cluster List buckets

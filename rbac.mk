@@ -1,5 +1,7 @@
 ### rbac
 
+# see permissions https://github.com/couchbase/ns_server/blob/master/apps/ns_server/src/menelaus_roles.erl#L418
+
 .PHONY: rbac/whoami
 rbac/whoami: ##@rest Get whoami
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/whoami \

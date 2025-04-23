@@ -46,6 +46,22 @@ sec/saferedirect/off: ##@security Disable safe redirect
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-d useRelativeWebRedirects=false
 
+.PHONY: sec/usernameincookie/on
+sec/usernameincookie/on: ##@security Enable username in cookie feature
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/internalSettings \
+		-v -k \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d includeUsernameInUICookie=true
+
+.PHONY: sec/usernameincookie/off
+sec/usernameincookie/off: ##@security Disable safe redirect
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/internalSettings \
+		-v -k \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d includeUsernameInUICookie=false
+
 .PHONY: sec/saferedirect/test
 sec/saferedirect/test: ##@security Safe redirect test
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \

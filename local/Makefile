@@ -29,6 +29,7 @@ include ../build.mk
 include ../xdcr.mk
 include ../ldap.mk
 include ../scan.mk
+include ../jwt.mk
 
 #space separated string array ->
 $(eval $(call defw,IP_ADDRESS,$(IP_ADDRESS)))

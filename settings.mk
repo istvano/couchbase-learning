@@ -45,3 +45,26 @@ settings/clientcert/save: ##@Settings Save Client Cert Auth settings
 # curl -v -X POST http://10.143.192.102:8091/settings/clientCertAuth \
 # --data-binary @client-auth-settings.json \
 # -u Administrator:password
+
+.PHONY: settings/developerprev/enable
+settings/developerprev/enable: ##@Settings Enable developer preview mode
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/settings/developerPreview  \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d 'enabled=true'
+
+.PHONY: settings/developerprev/status
+settings/developerprev/status: ##@Settings Check developer preview status
+	$(CURL) --silent $(CURL_OPTS) $(API_ENDPOINT)/pools  \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq . | grep Preview
+
+.PHONY: settings/oauthbearer/enable
+settings/oauthbearer/enable: ##@Settings Enable OAUTHBEARER SASL
+	$(CURL) $(CURL_OPTS) -X POST $(API_ENDPOINT)/settings/security  \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d 'oauthBearerEnabled=true' 
+
+.PHONY: settings/oauthbearer/status
+settings/oauthbearer/status: ##@Settings Check OAUTHBEARER status
+	$(CURL) --silent $(CURL_OPTS) $(API_ENDPOINT)/settings/security  \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq . | grep oauthBearerEnabled
+

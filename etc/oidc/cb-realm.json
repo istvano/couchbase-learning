@@ -98,6 +98,14 @@
     "client": {
       "test-client": [
         {
+          "name": "data_reader",
+          "description": "Data reader"
+        },
+        {
+          "name": "security_admin",
+          "description": "Security admin"
+        },
+        {
           "name": "bucket-admin",
           "description": "Client role bucket-admin"
         },
@@ -1224,9 +1232,101 @@
         "/group4",
         "/group9"
       ]
+    },
+    {
+      "username": "data_reader_user",
+      "enabled": true,
+      "email": "data_reader_user@localhost.com",
+      "emailVerified": true,
+      "firstName": "data_reader_user",
+      "lastName": "data_reader_user",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [],
+      "clientRoles": {
+        "test-client": [
+          "data_reader"
+        ]
+      },
+      "groups": []
+    },
+    {
+      "username": "security_admin_user",
+      "enabled": true,
+      "email": "security_admin_user@localhost.com",
+      "emailVerified": true,
+      "firstName": "security_admin_user",
+      "lastName": "security_admin_user",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [],
+      "clientRoles": {
+        "test-client": [
+          "security_admin_user"
+        ]
+      },
+      "groups": []
+    },
+    {
+      "username": "combined_user",
+      "enabled": true,
+      "email": "combined_user@localhost.com",
+      "emailVerified": true,
+      "firstName": "combined_user",
+      "lastName": "combined_user",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [],
+      "clientRoles": {
+        "test-client": [
+          "data_reader",
+          "security_admin_user"
+        ]
+      },
+      "groups": []
+    },
+    {
+      "username": "group_user",
+      "enabled": true,
+      "email": "group_user@localhost.com",
+      "emailVerified": true,
+      "firstName": "group_user",
+      "lastName": "group_user",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [],
+      "clientRoles": {
+        "test-client": [
+        ]
+      },
+      "groups": ["/jwt_data_admins"]
     }
   ],
   "groups": [
+    {
+      "name": "jwt_data_admins",
+      "path": "/jwt_data_admins"
+    },
     {
       "name": "group1",
       "path": "/group1"

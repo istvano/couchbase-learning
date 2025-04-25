@@ -29,18 +29,20 @@ idp/oidc/token: ##@idp Get access token
 	$(CURL) -X POST '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/openid-connect/token' \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-d 'grant_type=password' \
+	-d 'scope=openid' \
 	-d 'client_id=$(SSO_CLIENT)' \
 	-d 'username=$(SSO_USER)' \
 	-d 'password=$(SSO_PWD)' | jq
 
 .PHONY: idp/oidc/token/raw
 idp/oidc/token/raw: ##@idp Get access token and decode it
-	$(CURL) -X POST '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/openid-connect/token' \
+	$(CURL) -s -X POST '$(SSO_ENDPOINT)/realms/$(SSO_REALM)/protocol/openid-connect/token' \
 	-H 'Content-Type: application/x-www-form-urlencoded' \
 	-d 'grant_type=password' \
+	-d 'scope=openid' \
 	-d 'client_id=$(SSO_CLIENT)' \
 	-d 'username=$(SSO_USER)' \
-	-d 'password=$(SSO_PWD)' | jq -r '.access_token' | cut -d '.' -f2 | base64 --decode
+	-d 'password=$(SSO_PWD)' | jq -r '.access_token' | cut -d '.' -f2 | base64 --decode | jq .
 
 .PHONY: idp/oidc/jwks
 idp/oidc/jwks: ##@idp Get the jwks endpoint

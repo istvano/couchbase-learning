@@ -10,7 +10,7 @@ jwt/settings/configure: ##@jwt Configure JWT auth
 	$(CURL) -X PUT $(CURL_OPTS) $(API_ENDPOINT)/settings/jwt  \
 		-H 'Content-Type: application/json' \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-d '{"enabled":true,"issuers":[{"name":"http://localhost:8080/realms/cb","signingAlgorithm":"RS256","audClaim":"aud","audienceHandling":"any","audiences":["test-cliet"],"subClaim":"preferred_username","publicKeySource":"jwks_uri","jwksUri":"http://couchbase_oidc:8080/realms/cb/protocol/openid-connect/certs"}]}' \
+		-d '{"enabled":true,"issuers":[{"name":"http://localhost:8080/realms/cb","signingAlgorithm":"RS256","audClaim":"azp","audienceHandling":"any","audiences":["test-client"],"subClaim":"preferred_username","publicKeySource":"jwks_uri","jwksUri":"http://couchbase_oidc:8080/realms/cb/protocol/openid-connect/certs"}]}' \
 
 .PHONY: jwt/settings/delete
 jwt/settings/delete: ##@jwt delete JWT auth settings
@@ -67,6 +67,20 @@ jwt/token/data_reader_user/raw: ##@jwt create access token for data_reader_user 
 	-d 'username=data_reader_user' \
 	-d 'password=password' | jq -r '.access_token' | cut -d '.' -f2 | base64 --decode
 
-.PHONY: jwt/token/test
-jwt/token/test: ##@jwt test token 
+.PHONY: jwt/token/test/rest
+jwt/token/test: ##@jwt test token to connect to ns-server
 	curl -vvv -H "Authorization: Bearer $(JWT)" http://localhost:8091/pools/default
+
+.PHONY: jwt/token/test/data
+jwt/token/test/data: ##@jwt test token to connect to memcached
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	mcstat -h localhost -p 11210 \
+	--sasl_mechanism OAUTHBEARER --user data_reader_user  \
+	--password $(JWT) --bucket test
+
+.PHONY: jwt/token/test/query
+jwt/token/test/query: ##@jwt test token to connect to query
+	$(CURL) -vvv -X POST $(CURL_OPTS) $(API_ENDPOINT_QUERY)/query/service \
+     -H "Authorization: Bearer $JWT" \
+     -H "Content-Type: application/json" \
+     -d '{"statement": "SELECT a.callsign FROM `travel-sample`.inventory.airline a LIMIT 5"}'

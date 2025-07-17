@@ -1,5 +1,3 @@
-TRIVY=trivy
-
 .PHONY: sec/password/rotate_internal
 sec/password/rotate_internal: ##@security Rotate internal passwords in the cluster
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
@@ -105,8 +103,4 @@ sec/audit/config/reload: ##@security Reload audit config data
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-d "[{set, _, X}] = ns_audit_cfg:upgrade_descriptors(), ns_config:set(audit_decriptors, lists:ukeysort(1, X))." \
 		-X POST
-
-.PHONY: sec/image/scan
-sec/image/scan: ##@security Scan image with Trivy
-	$(TRIVY) image $(DOCKER_IMAGE):$(VERSION) --timeout 15m --debug
 	

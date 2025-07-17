@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///opt/homebrew/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.97 scan initiated Tue Jul 15 03:35:31 2025 as: nmap -sS -Pn -T4 -p 4369,8091-8097,9100-9105,9110-9124,9130,9140,9998-9999, -sV -&#45;reason -oA couchbase_ports 11206-11207,11209-11210,11213,11280, 18091-18097,19102,19130, 21100,21150,21200,21250,21300,21350 localhost -->
+<nmaprun scanner="nmap" args="nmap -sS -Pn -T4 -p 4369,8091-8097,9100-9105,9110-9124,9130,9140,9998-9999, -sV -&#45;reason -oA couchbase_ports 11206-11207,11209-11210,11213,11280, 18091-18097,19102,19130, 21100,21150,21200,21250,21300,21350 localhost" start="1752546931" startstr="Tue Jul 15 03:35:31 2025" version="7.97" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="33" services="4369,8091-8097,9100-9105,9110-9124,9130,9140,9998-9999"/>

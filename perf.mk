@@ -3,7 +3,10 @@ PERFORMANCE_COLLECTION=_default._default
 PERFORMANCE_REPLICA=0
 PERFORMANCE_INDEX_REPLICA=0
 PERFORMANCE_RAMSIZE=1000
-PERFORMANCE_BUCKET=performance
+PERFORMANCE_BUCKET=bench
+PERFORMANCE_SCOPE=bench
+PERFORMANCE_COLLECTION=usertable
+PERFORMANCE_STORAGE_BACKEND=couchstore
 
 YCSB_DOCKER_IMAGE?=ycsb-couchbase
 YCSB_RECORDS?=10000000
@@ -11,6 +14,7 @@ YCSB_OPERATIONS?=10000000
 YCSB_BUCKET?=0
 YCSB_NODE?=$(APP)_main
 YCSB_MANUAL?=false
+
 
 ### PERFORMANCE
 
@@ -26,7 +30,23 @@ perf/bucket/create: ##@perf Create bucket for performance tests
   		--enable-flush 1 \
   		--enable-index-replica $(PERFORMANCE_INDEX_REPLICA) \
 		--bucket-type couchbase \
+		--storage-backend $(PERFORMANCE_STORAGE_BACKEND) \
 		--wait 
+	@echo "Creating scope '${PERFORMANCE_SCOPE}' in bucket '${PERFORMANCE_BUCKET}' …"
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	couchbase-cli collection-manage -c $(CONNECT_ENDPOINT):$(CONNECT_ENDPOINT_PORT) \
+	--username "${COUCHBASE_USERNAME}" \
+	--password "${COUCHBASE_PASSWORD}" \
+	--bucket "${PERFORMANCE_BUCKET}" \
+	--create-scope "${PERFORMANCE_SCOPE}"
+	@echo "Creating collection ${PERFORMANCE_COLLECTION} in scope '${PERFORMANCE_SCOPE}' in bucket '${PERFORMANCE_BUCKET}' …"
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	couchbase-cli collection-manage -c $(CONNECT_ENDPOINT):$(CONNECT_ENDPOINT_PORT) \
+	--username "${COUCHBASE_USERNAME}" \
+	--password "${COUCHBASE_PASSWORD}" \
+	--bucket "${PERFORMANCE_BUCKET}" \
+	--create-collection "${PERFORMANCE_SCOPE}.${PERFORMANCE_COLLECTION}"
+
 
 .PHONY: perf/bucket/delete
 perf/bucket/delete: ##@perf delete the performance tests bucket
@@ -48,7 +68,7 @@ perf/document/create: ##@perf delete the performance tests bucket
 .PHONY: perf/test/5050
 perf/test/5050: ##@perf Start pillowflight test using 50% read and write workloads
 	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	cbc-pillowfight --spec "couchbases://$(CONNECT_ENDPOINT)/$(PERFORMANCE_BUCKET)?ssl=no_verify&ipv6=allow&enable_tracing=false" -u $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD --timings --batch-size 1 --random-body --random-body-pool-size 100 --num-items 20000000 --num-threads 128 -m 1024 -M 16384 --collection=$(PERFORMANCE_COLLECTION) --json --set-pct 50 --num-cycles 1000000 --durability majority
+	cbc-pillowfight --spec "couchbases://$(CONNECT_ENDPOINT)/$(PERFORMANCE_BUCKET)?ssl=no_verify&ipv6=allow&enable_tracing=false" -u $$COUCHBASE_USERNAME --password $$COUCHBASE_PASSWORD --timings --batch-size 1 --random-body --random-body-pool-size 100 --num-items 20000000 --num-threads 128 -m 1024 -M 16384 --collection=$(PERFORMANCE_SCOPE).$(PERFORMANCE_COLLECTION) --json --set-pct 50 --num-cycles 1000000 --durability majority
 
 .PHONY: perf/ycsb/build
 perf/ycsb/build: ##@perf Build container for ycsb

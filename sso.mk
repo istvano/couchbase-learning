@@ -6,8 +6,9 @@ SSO_PWD?=password
 SSO_ENDPOINT?=http://localhost:8080
 SSO_REALM?=cb
 SSO_CLIENT?=test-client
-SSO_CERT?=/opt/keycloak/data/tls/tls.pem
-SSO_KEY?=/opt/keycloak/data/tls/tls.key
+SSO_CERT_PATH=/opt/keycloak/data/tls
+SSO_CERT?=tls.pem
+SSO_KEY?=tls.key
 SSO_TLS_MOUNT?=$(MFILECWD)/../etc/tls
 SSO_REALM_MOUNT?=$(MFILECWD)/../etc/oidc
 
@@ -23,8 +24,8 @@ idp/up: ##@idp Start idp
 		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
 		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
 		-e KC_PROXY_HEADERS=xforwarded \
-		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_KEY) \
-		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT) \
+		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_CERT_PATH)/$(SSO_KEY) \
+		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT_PATH)/$(SSO_CERT) \
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
 		start-dev --import-realm 
 

@@ -12,6 +12,7 @@ SSO_KEY?=tls.key
 SSO_TLS_MOUNT?=$(MFILECWD)/../etc/tls
 SSO_REALM_MOUNT?=$(MFILECWD)/../etc/oidc
 SSO_PORT?=8443
+SSO_PROXY_HEADERS?=xforwarded
 
 .PHONY: idp/up
 idp/up: ##@idp Start idp
@@ -22,9 +23,10 @@ idp/up: ##@idp Start idp
 		--mount type=bind,source=$(SSO_REALM_MOUNT),target=/opt/keycloak/data/import \
 		--mount type=bind,source=$(SSO_TLS_MOUNT),target=/opt/keycloak/data/tls \
 		-p 8080:8080 -p $(SSO_PORT):$(SSO_PORT) \
-		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
+  		-e KC_BOOTSTRAP_ADMIN_USERNAME=$(SSO_USER) \
+  		-e KC_BOOTSTRAP_ADMIN_PASSWORD=$(SSO_PWD) \
 		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
-		-e KC_PROXY_HEADERS=xforwarded \
+		-e KC_PROXY_HEADERS=$(SSO_PROXY_HEADERS) \
 		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_CERT_PATH)/$(SSO_KEY) \
 		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT_PATH)/$(SSO_CERT) \
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
@@ -39,10 +41,11 @@ idp/debug: ##@idp Start idp in debug mode
 		--name="$(APP)_$(OIDC_NODE)" \
 		--mount type=bind,source=$(SSO_REALM_MOUNT),target=/opt/keycloak/data/import \
 		--mount type=bind,source=$(SSO_TLS_MOUNT),target=/opt/keycloak/data/tls \
-		-p 8080:8080 -p 8443:8443 \
-		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
+		-p 8080:8080 -p $(SSO_PORT):$(SSO_PORT) \
+  		-e KC_BOOTSTRAP_ADMIN_USERNAME=$(SSO_USER) \
+  		-e KC_BOOTSTRAP_ADMIN_PASSWORD=$(SSO_PWD) \
 		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
-		-e KC_PROXY_HEADERS=xforwarded \
+		-e KC_PROXY_HEADERS=$(SSO_PROXY_HEADERS) \
 		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_CERT_PATH)/$(SSO_KEY) \
 		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT_PATH)/$(SSO_CERT) \
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \

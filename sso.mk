@@ -12,7 +12,7 @@ SSO_KEY?=tls.key
 SSO_TLS_MOUNT?=$(MFILECWD)/../etc/tls
 SSO_REALM_MOUNT?=$(MFILECWD)/../etc/oidc
 
-.PHONY: oidc/idp/up
+.PHONY: idp/up
 idp/up: ##@idp Start idp
 	$(DOCKER) run -it --rm -d \
 		--env-file=./.env \
@@ -29,7 +29,24 @@ idp/up: ##@idp Start idp
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
 		start-dev --import-realm 
 
-.PHONY: oidc/idp/down
+.PHONY: idp/debug
+idp/debug: ##@idp Start idp in debug mode
+	$(DOCKER) run -it --rm \
+		--env-file=./.env \
+		--entrypoint=/bin/bash \
+		--network $(ENV)_couchbase \
+		--name="$(APP)_$(OIDC_NODE)" \
+		--mount type=bind,source=$(SSO_REALM_MOUNT),target=/opt/keycloak/data/import \
+		--mount type=bind,source=$(SSO_TLS_MOUNT),target=/opt/keycloak/data/tls \
+		-p 8080:8080 -p 8443:8443 \
+		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
+		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
+		-e KC_PROXY_HEADERS=xforwarded \
+		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_CERT_PATH)/$(SSO_KEY) \
+		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT_PATH)/$(SSO_CERT) \
+		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
+
+.PHONY: idp/down
 idp/down: ##@idp Stop idp
 	$(DOCKER) rm -f "$(APP)_$(OIDC_NODE)"
 

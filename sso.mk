@@ -6,10 +6,12 @@ SSO_PWD?=password
 SSO_ENDPOINT?=http://localhost:8080
 SSO_REALM?=cb
 SSO_CLIENT?=test-client
+SSO_CERT?=/opt/keycloak/data/tls/tls.pem
+SSO_KEY?=/opt/keycloak/data/tls/tls.key
 
 .PHONY: oidc/idp/up
 idp/up: ##@idp Start idp
-	$(DOCKER) run -it --rm \
+	$(DOCKER) run -it --rm -d \
 		--env-file=./.env \
 		--network $(ENV)_couchbase \
 		--name="$(APP)_$(OIDC_NODE)" \
@@ -19,10 +21,14 @@ idp/up: ##@idp Start idp
 		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
 		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \
 		-e KC_PROXY_HEADERS=xforwarded \
-		-e KC_HTTPS_CERTIFICATE_KEY_FILE=/opt/keycloak/data/tls/tls.key \
-		-e KC_HTTPS_CERTIFICATE_FILE=/opt/keycloak/data/tls/tls.pem \
+		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_KEY) \
+		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT) \
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
 		start-dev --import-realm 
+
+.PHONY: oidc/idp/down
+idp/down: ##@idp Stop idp
+	$(DOCKER) rm -f "$(APP)_$(OIDC_NODE)"
 
 .PHONY: idp/oidc/token
 idp/oidc/token: ##@idp Get access token

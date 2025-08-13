@@ -8,6 +8,8 @@ SSO_REALM?=cb
 SSO_CLIENT?=test-client
 SSO_CERT?=/opt/keycloak/data/tls/tls.pem
 SSO_KEY?=/opt/keycloak/data/tls/tls.key
+SSO_TLS_MOUNT?=$(MFILECWD)/../etc/tls
+SSO_REALM_MOUNT?=$(MFILECWD)/../etc/oidc
 
 .PHONY: oidc/idp/up
 idp/up: ##@idp Start idp
@@ -15,8 +17,8 @@ idp/up: ##@idp Start idp
 		--env-file=./.env \
 		--network $(ENV)_couchbase \
 		--name="$(APP)_$(OIDC_NODE)" \
-		--mount type=bind,source=$(MFILECWD)/../etc/oidc/cb-realm.json,target=/opt/keycloak/data/import/cb-realm.json \
-		--mount type=bind,source=$(MFILECWD)/../etc/tls,target=/opt/keycloak/data/tls \
+		--mount type=bind,source=$(SSO_REALM_MOUNT),target=/opt/keycloak/data/import \
+		--mount type=bind,source=$(SSO_TLS_MOUNT),target=/opt/keycloak/data/tls \
 		-p 8080:8080 -p 8443:8443 \
 		-e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin \
 		-e KC_DB=dev-file -e KC_HEALTH_ENABLED=true -e KC_METRICS_ENABLED=true \

@@ -13,6 +13,7 @@ SSO_TLS_MOUNT?=$(MFILECWD)/../etc/tls
 SSO_REALM_MOUNT?=$(MFILECWD)/../etc/oidc
 SSO_PORT?=8443
 SSO_PROXY_HEADERS?=xforwarded
+SSO_HOSTNAME?=http://localhost
 
 .PHONY: idp/up
 idp/up: ##@idp Start idp
@@ -30,7 +31,7 @@ idp/up: ##@idp Start idp
 		-e KC_HTTPS_CERTIFICATE_KEY_FILE=$(SSO_CERT_PATH)/$(SSO_KEY) \
 		-e KC_HTTPS_CERTIFICATE_FILE=$(SSO_CERT_PATH)/$(SSO_CERT) \
 		quay.io/keycloak/keycloak:$(OIDC_VERSION) \
-		start-dev --import-realm --https-port=$(SSO_PORT) \
+		start-dev --import-realm --https-port=$(SSO_PORT) --hostname $(SSO_HOSTNAME) \
 
 .PHONY: idp/debug
 idp/debug: ##@idp Start idp in debug mode

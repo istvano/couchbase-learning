@@ -2,82 +2,105 @@
 
 ## Initialize
 
+* clone the repository
+* for local development `cd local`
+* for Capella `cd provisioned` please note: Capella has limitations and not all functions will work
+
+### Variables
+
+If you are planning to run local nodes with Docker, edit the `.env` file in the local folder
+
+Select the docker image source and version
+
+```bash
+DOCKER_IMAGE?=ghcr.io/cb-vanilla/server
+VERSION?=8.0.0
+```
+
+By default this will pull from private github repository, if you use the open releases use
+
+```bash
+DOCKER_IMAGE?=couchbase
+VERSION?=enterprise-7.6.7
+```
+
+By default, this image uses podman to bring up containers, you need to edit the `.env` file to use docker instead
+
+```
+# Docker host
+INTERNAL_ENDPOINT=https://docker.for.mac.host.internal
+DOCKER=docker
+EXPOSE_HOST=--add-host login.couchbase.lan:host-gateway
+
+# Podman host
+# INTERNAL_ENDPOINT=https://host.containers.internal
+# INTERNAL_DOMAIN=host.containers.internal
+# DOCKER=podman
+# EXPOSE_HOST=
+```
+
+
 ### Common steps
 
-* make tls/create-cert
-* make dns/insert
-* make network/create
+* `make network/create` to create a docker network
+* `make volume/create` to create volumes for the nodes
+
+Optionally you can create a dns for the local cluster, this is not necessary
+
+* `make dns/insert` to create dns for the nodes, this is needed if your work / test involves using dns related functionalty
 
 ### Single node
 
-* make up
-* make setup/cluster-init
+* `make single/up` this will bring up a single node cluster
+* `make cluster/init` this will create a user called `Administrator` with the credential `password`
 
 This will start the main node and also initialize a single node cluster with the following services: **data,index,query**
 
 ### Multi node
 
-* make cluster/up
-
-will create 4 docker containers:
+* `make cluster/up` will create 4 docker containers:
 
 1. a main node
 2. east and west nodes 
 3. also a misc node
 
-* make setup/cluster-init
+* `make setup/cluster-init` will initialize the main node with **data, index, query** services
 
-will initialize the main node with **data, index, query** services
+* `make setup/cluster-add-workers` will add east and west as worker nodes all running **data, index, query** services
 
-* make setup/cluster-add-workers
+* `make setup/cluster-add-misc-node` will add **search, analitics, eventing and backup** services using a single docker container
 
-will add east and west as worker nodes all running **data, index, query** services
-
-* make setup/cluster-add-misc-node
-
-will add **search, analitics, eventing and backup** services using a single docker container
-
-* setup/cluster-rebalance
+* `setup/cluster-rebalance`
 
 ## Initialize
 
-* make setup/create-user
+* `make setup/create-user` will create a different admin user
 
 ## Sample data
 
 ### Couchbase
 
-* make sample/import-cb-sample
-
-will load the couchbase sample dataset
+* `make setup/sample/import` will load the couchbase sample dataset
 
 ### Custom movies dataset
 
-* movies/create-bucket  
+* `make movies/bucket/create` will create bucket named playground
 
-will create bucket named playground
+* `make movies/scope/create` will create scope within the playground bucket called sample
 
-* movies/create-scope  
+* `make movies/collection/create`  will create scope within the playground bucket called movies
 
-will create scope within the playground bucket called sample
-
-* movies/create-collection  Create collection within scope
-
-will create scope within the playground bucket called movies
-
-* movies/create-indexes  Create indexes
-
-will create a sample index 
+* `make movies/create-indexes`  will create a sample index 
 
 ```sql
 CREATE PRIMARY INDEX `#primary` ON `playground`.`sample`.`movies`'
 ```
 
-* movies/import  Import movies into the playground bucket
+* `make movies/import`  Import movies into the playground bucket
 
 will import https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json dataset into the movies collection
 
-* movies/query  Run a query to filter out commedies
+* `make movies/query`  Run a query to filter out commedies
 
 will run a sample query
 
@@ -110,13 +133,13 @@ to see if the sample data is correct
 
 ### Mutual TLS authentication
 
-* you go to the local folder `cd local`
-* you need to create a CA that will be used to sign the client certificate `make tls/create-ca-cert`
-* now you can create the client private key and certificate `make tls/create-client-cert`
-* you need to copy the CA created earlier to the Couchbase index/CA make `make tls/copy-ca`
-* use the couchbase CLI to reload the certs `make tls/loadCAs`
-* create a user with the same name as the one in the certificate `make tls/create-client-user`
-* create a user with the same name as the one in the certificate `make tls/create-client-user`
+* Assuming you are in the local folder, or go to the local folder `cd local`
+* you need to create a CA that will be used to sign the client certificate `make tls/ca/create`
+* now you can create the client private key and certificate `make tls/client/create`
+* you need to copy the CA created earlier to the Couchbase index/CA make `make tls/ca/copy`
+* use the couchbase CLI to reload the certs `make tls/ca/load`
+* create a user with the same name as the one in the certificate `make tls/client/create-user`
+* load the settings and enable client cert authentication `make settings/clientcert/load`
 * call an endpoint with the mtls settings see `make tls/client/test`
 
 You should check out the **client.ext** file in the tls folder as it has the username 

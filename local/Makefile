@@ -315,67 +315,6 @@ node/console: ##@node Open web console
 	$(OPEN) $(API_ENDPOINT)
 
 
-### MOVIES
-
-.PHONY: movies/create-bucket
-movies/bucket/create: ##@movies Create bucket
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/couchbase-cli bucket-create -c localhost:8091 \
-		--username $$COUCHBASE_USERNAME \
-		--password $$COUCHBASE_PASSWORD \
-		--bucket $$COUCHBASE_BUCKET \
-		--bucket-ramsize $$COUCHBASE_BUCKET_RAMSIZE \
-		--bucket-type couchbase \
-		--wait 
-
-.PHONY: movies/create-scope
-movies/scope/create: ##@movies Create scope within the bucket
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/couchbase-cli collection-manage  -c localhost:8091 \
-		--username $$COUCHBASE_USERNAME \
-		--password $$COUCHBASE_PASSWORD \
-		--bucket $$COUCHBASE_BUCKET \
-		--create-scope sample
-
-.PHONY: movies/create-collection
-movies/collection/create: ##@movies Create collection within scope
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	./bin/couchbase-cli collection-manage  -c localhost:8091 \
-		--username $$COUCHBASE_USERNAME \
-		--password $$COUCHBASE_PASSWORD \
-		--bucket $$COUCHBASE_BUCKET \
-		--create-collection sample.movies
-
-.PHONY: movies/create-indexes
-movies/index/create: ##@movies Create indexes
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	$(CURL) $(CURL_OPTS) -v http://localhost:8093/query/service \
-		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-d 'statement=CREATE PRIMARY INDEX `#primary` ON `playground`.`sample`.`movies`'
-
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	$(CURL) $(CURL_OPTS) -v http://localhost:8093/query/service \
-		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-d 'statement=CREATE INDEX idx_movies_genres ON playground.sample.movies(DISTINCT ARRAY v FOR v IN genres END)'
-
-.PHONY: movies/import
-movies/import: ##@movies Import movies into the playground bucket
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-		bash -c "curl https://raw.githubusercontent.com/prust/wikipedia-movie-data/master/movies.json  > /tmp/movies.json"
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	/opt/couchbase/bin/cbimport json -c couchbase://127.0.0.1 \
-		-u $$COUCHBASE_USERNAME -p $$COUCHBASE_PASSWORD \
-		--scope-collection-exp sample.movies \
-		-b $$COUCHBASE_BUCKET -d file:///tmp/movies.json -f list -g \#UUID\#
-
-.PHONY: movies/query
-movies/query: ##@movies Run a query to filter out commedies
-	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
-	$(CURL) $(CURL_OPTS) -v http://localhost:8093/query/service \
-		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-d "statement=SELECT * FROM playground.sample.movies AS movies WHERE ANY v IN genres SATISFIES v = 'Comedy' END LIMIT 10"
-
-
 .PHONY: rest/audit/config
 rest/audit/config: ##@rest Get config
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit \

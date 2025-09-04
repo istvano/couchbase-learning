@@ -6,6 +6,8 @@
 .env.*
 openapi.generated.yaml
 .DS_Store
+local/couchbase_ports.gnmap
+local/couchbase_ports.nmap
 
 # User-specific files
 *.rsuser

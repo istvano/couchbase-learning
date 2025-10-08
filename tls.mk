@@ -238,9 +238,27 @@ tls/client/create-user:  ##@tls Create tls client user
 		--roles ro_admin \
 		--auth-domain local
 
+.PHONY: tls/client/create-user-ext
+tls/client/create-user-ext:  ##@tls Create tls client user external
+	@echo "Creating self signed CA Private key"
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	./bin/couchbase-cli \
+		user-manage --cluster $(API_ENDPOINT) \
+		--username $$COUCHBASE_USERNAME \
+		--password $$COUCHBASE_PASSWORD \
+		--set \
+		--rbac-username client.user@localhost.lan \
+		--roles ro_admin \
+		--auth-domain external
+
 .PHONY: tls/client/test
 tls/client/test: ##@tls Get CPU stats using certificate authentication
 	curl --insecure -vvv --cacert $(TLS)/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET $(CURL_OPTS) https://localhost:18091/pools/default/stats/range/sysproc_cpu_utilization?proc=ns_server&start=-5
+
+.PHONY: tls/client/test-bucket
+tls/client/test-bucket: ##@tls Get bucket info
+	curl --insecure -vvv --cacert $(TLS)/rootCA.pem --cert $(TLS)/client-user.cert.pem --key $(TLS)/$(KEY_FILENAME) -X GET $(CURL_OPTS) https://localhost:18091/pools/default/buckets
+
 
 .PHONY: tls/client/create
 tls/client/create:  ##@tls Create self sign certs for local machine

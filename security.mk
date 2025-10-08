@@ -22,7 +22,7 @@ sec/password/policy: ##@security Change password policy with initialized cluster
 	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/settings/passwordPolicy \
 		-X POST \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
-		-d minLength=8 \
+		-d minLength=16 \
 		-d enforceUppercase=false \
 		-d enforceLowercase=false \
 		-d enforceDigits=false \

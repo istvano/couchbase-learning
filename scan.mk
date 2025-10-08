@@ -91,3 +91,6 @@ scan/image/blackduck: ##@scan Scan image with blackduck
 scan/zap: ##@scan Scan with zap
 	$(DOCKER) run -v $$(pwd)/../etc/zap:/zap/wrk/:rw -e ZAP_WEBSWING_OPTS="-host 0.0.0.0 -port 9090" -u zap -p 8080:8080 -p 9090:9090 -i ghcr.io/zaproxy/zaproxy:stable zap-webswing.sh
 
+.PHONY: scan/image/check-updates
+scan/image/check-updates: ##@scan Scan image with grype output in sbom
+	$(DOCKER) run -u 0 --rm -it --entrypoint bash $(DOCKER_IMAGE):$(VERSION) -c "apt update && apt list --upgradable"

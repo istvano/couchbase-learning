@@ -12,3 +12,10 @@ bucket/stream: ##@bucket Stream
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
 		-H "Content-Type: application/json"
 
+.PHONY: bucket/travel/sample
+bucket/travel/sample: ##@bucket Read documents
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT_QUERY)/query/service \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-H "Content-Type: application/json" \
+		-d '{"statement":"SELECT META().id, * FROM `travel-sample`.`inventory`.`airline` LIMIT 10;"}'

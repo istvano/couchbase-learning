@@ -68,3 +68,12 @@ settings/oauthbearer/status: ##@Settings Check OAUTHBEARER status
 	$(CURL) --silent $(CURL_OPTS) $(API_ENDPOINT)/settings/security  \
 		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq . | grep oauthBearerEnabled
 
+.PHONY: settings/internal/status
+settings/internal/status: ##@Settings check internal status
+	$(CURL) --silent $(CURL_OPTS) $(API_ENDPOINT)/internalSettings  \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD | jq .
+
+.PHONY: settings/internal/enableUserNameCookie
+settings/internal/enableUserNameCookie: ##@Settings enable user name in UI cookie
+	$(CURL) --silent $(CURL_OPTS) $(API_ENDPOINT)/internalSettings  \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD -d 'includeUsernameInUICookie=true'

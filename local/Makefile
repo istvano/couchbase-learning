@@ -79,8 +79,24 @@ single/up: ##@single Start docker container
 		$(EXPOSE_HOST) \
 		--mount type=bind,source=$(MFILECWD)/.env,target=/opt/.env \
 		--mount type=bind,source=$(MFILECWD)/../share,target=/opt/share \
-		--mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs \
-		--mount type=bind,source=$(MFILECWD)/../share/data,target=/opt/couchbase/var \
+ 		--mount type=bind,source=$(MFILECWD)/../share/logs,target=/opt/couchbase/var/lib/couchbase/logs \
+ 		--mount type=bind,source=$(MFILECWD)/../share/data,target=/opt/couchbase/var \
+		-w /opt/couchbase \
+		-p 8091-8094:8091-8094  \
+		-p 11210:11210  \
+		-p 18091-18094:18091-18094  \
+		-p 11207:11207 \
+		--health-cmd "$(CURL) --fail $(API_ENDPOINT)/ui/index.html || exit 1" --health-interval=5s --health-timeout=3s --health-retries=10 --health-start-period=5s \
+		$(DOCKER_IMAGE):$(VERSION)
+
+.PHONY: single/up/novolume
+single/up/novolume: ##@single Start docker container without volume
+	$(DOCKER) run -it -d --rm \
+		--env-file=./.env \
+		--network $(ENV)_couchbase \
+		--name="$(APP)_$(MAIN_NODE)" \
+		$(EXPOSE_HOST) \
+		--mount type=bind,source=$(MFILECWD)/../share/couchbase-server,target=/opt/couchbase/bin/couchbase-server \
 		-w /opt/couchbase \
 		-p 8091-8094:8091-8094  \
 		-p 11210:11210  \

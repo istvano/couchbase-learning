@@ -116,3 +116,18 @@ settings/rbac/backup: ##@users Backup users
 settings/rbac/restore: ##@users Restore users
 	@echo "not documented"
 
+.PHONY: rbac/create/local_user_admin
+rbac/create/local_user_admin: ##@rest Create a user with the role user_admin_local
+	@echo "Creating user: user_admin_local"
+	@ROLE_STR='roles=user_admin_local&password=$(COUCHBASE_LOCAL_USER_PASSWORD)'; \
+	$(CURL) $(CURL_OPTS) -X PUT $(API_ENDPOINT)/settings/rbac/users/local/$(COUCHBASE_LOCAL_USER_ADMIN) \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+		-d "$$ROLE_STR";
+
+.PHONY: rbac/create/ro_admin
+rbac/create/ro_admin: ##@rest Create a user with the role ro admin
+	@echo "Creating user: ro_admin"
+	@ROLE_STR='roles=data_reader%5B*%5D%2Cro_admin&groups=&password=$(COUCHBASE_RO_PASSWORD)'; \
+	$(CURL) $(CURL_OPTS) -X PUT $(API_ENDPOINT)/settings/rbac/users/local/$(COUCHBASE_RO_ADMIN) \
+		-u $$COUCHBASE_LOCAL_USER_ADMIN:$$COUCHBASE_LOCAL_USER_PASSWORD \
+		-d $$ROLE_STR;

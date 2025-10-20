@@ -263,7 +263,7 @@ tls/client/test-bucket: ##@tls Get bucket info
 .PHONY: tls/client/create
 tls/client/create:  ##@tls Create self sign certs for local machine
 	@echo "Creating client signed certificate request"
-	openssl req -new -key $(TLS)/$(KEY_FILENAME) -out $(TLS)/client-user.csr -subj "/CN=clientuser"
+	openssl req -new -key $(TLS)/$(KEY_FILENAME) -out $(TLS)/client-user.csr -subj "/CN=$(COUCHBASE_TLS_CLIENT_USER)"
 	@echo "Creating client signed certificate"
 	openssl x509 -CA $(TLS)/rootCA.pem -CAkey $(TLS)/rootCA-key.pem \
 		-CAcreateserial -days 365 -req -in $(TLS)/client-user.csr \

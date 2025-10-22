@@ -65,8 +65,10 @@ MAIN_DOMAIN=$(shell echo $(DOMAINS) | awk '{print $$1}')
 $(eval $(call defw,NODES,main east west misc))
 MAIN_NODE=$(shell echo $(NODES) | awk '{print $$1}')
 
-# === END USER OPTIONS ===
+SERVICES?=data,index,query,fts
+ADDITIONAL_SERVICES?=backup,eventing,analytics
 
+# === END USER OPTIONS ===
 
 ### STACK
 
@@ -116,6 +118,7 @@ single/delete: ##@single Remove single cluster data
 
 .PHONY: single/init
 single/init: ##@single Init cluster
+	@echo "Initializing cluster... with $(SERVICES) services"
 	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
 	&& $(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
 	./bin/couchbase-cli cluster-init \
@@ -123,7 +126,7 @@ single/init: ##@single Init cluster
 		--cluster-name $$CLUSTER_NAME \
   		--cluster-username $$COUCHBASE_USERNAME \
   		--cluster-password $$COUCHBASE_PASSWORD \
-  		--services data,index,query,fts \
+  		--services $(SERVICES) \
   		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
   		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
   		--index-storage-setting default \
@@ -140,6 +143,20 @@ single/init: ##@single Init cluster
 setup/init/ip: ##@single print main node ip
 	@(IP=`$(DOCKER) inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(APP)_$(MAIN_NODE)` \
 	&& echo $$IP)
+
+.PHONY: cluster/setup/remote
+cluster/setup/remote: ##@cluster Import sample data for xdcr node
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/pools/default/remoteClusters \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+  		--data-raw 'name=xdcr_cluster&hostname=couchbase_xdcr%3A8091&username=Administrator&password=password'
+
+.PHONY: cluster/setup/replication
+cluster/setup/replication: ##@cluster Create replication for xdcr node
+	$(DOCKER) exec -it $(APP)_$(MAIN_NODE) \
+	$(CURL) $(CURL_OPTS) -v $(API_ENDPOINT)/controller/createReplication?just_validate=0 \
+		-u $$COUCHBASE_USERNAME:$$COUCHBASE_PASSWORD \
+  		--data-raw 'fromBucket=travel-sample&toCluster=xdcr_cluster&toBucket=travel-sample-replicated&priority=High&collectionsExplicitMapping=false&collectionsMigrationMode=false&filterBinary=false&filterExpiration=false&filterDeletion=false&filterBypassExpiry=false&compressionType=Auto&sourceNozzlePerNode=2&targetNozzlePerNode=2&checkpointInterval=600&workerBatchSize=500&docBatchSizeKb=2048&failureRestartInterval=10&optimisticReplicationThreshold=256&statsInterval=1000&networkUsageLimit=0&logLevel=Info&filterExpression=&replicationType=continuous&mobile=Off'
 
 ### CLUSTER
 
@@ -186,7 +203,7 @@ cluster/init: ##@cluster Init cluster
 		--cluster-name $$CLUSTER_NAME \
   		--cluster-username $$COUCHBASE_USERNAME \
   		--cluster-password $$COUCHBASE_PASSWORD \
-  		--services data,index,query,fts \
+  		--services $(SERVICES) \
   		--cluster-ramsize $$COUCHBASE_RAM_SIZE \
   		--cluster-index-ramsize $$COUCHBASE_INDEX_RAM_SIZE \
   		--index-storage-setting default \
@@ -202,7 +219,7 @@ cluster/worker/add: ##@cluster Add workers to an existing cluster
   		--username $$COUCHBASE_USERNAME \
   		--password $$COUCHBASE_PASSWORD \
 		--server-add $$IP \
-  		--services data,index,query,fts \
+  		--services $(SERVICES) \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_USERNAME \
   		--server-add-password $$COUCHBASE_PASSWORD \
@@ -215,7 +232,7 @@ cluster/worker/add: ##@cluster Add workers to an existing cluster
   		--username $$COUCHBASE_USERNAME \
   		--password $$COUCHBASE_PASSWORD \
 		--server-add $$IP \
-  		--services data,index,query,fts \
+  		--services $(SERVICES) \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_USERNAME \
   		--server-add-password $$COUCHBASE_PASSWORD \
@@ -231,7 +248,7 @@ cluster/misc/add: ##@cluster Add misc node to run search,analytics,eventing and 
   		--username $$COUCHBASE_USERNAME \
   		--password $$COUCHBASE_PASSWORD \
 		--server-add $$IP \
-  		--services backup,eventing,analytics \
+  		--services $(ADDITIONAL_SERVICES) \
   		--index-storage-setting default \
 		--server-add-username $$COUCHBASE_USERNAME \
   		--server-add-password $$COUCHBASE_PASSWORD \
@@ -330,7 +347,33 @@ node/log: ##@node LOG tail
 node/console: ##@node Open web console
 	$(OPEN) $(API_ENDPOINT)
 
+.PHONY: node/process/list
+node/process/list: ##@node List running processes (deduped basenames)
+	@$(DOCKER) top $(APP)_$(MAIN_NODE) -eo cmd \
+	| sed '1d' \
+	| awk '{exe=$$1; sub(".*/","",exe); print exe}' \
+	| sort -u
 
+.PHONY: node/process/list/full
+node/process/list/full: ##@node List running processes (full command)
+	@$(DOCKER) top $(APP)_$(MAIN_NODE) -eo pid,ppid,cmd \
+	| sed '1d' \
+	| awk '{pid=$$1;ppid=$$2; sub(/^[^ ]+[ \t]+[^ ]+[ \t]+/,""); exe=$$1; sub(".*/","",exe); \
+	        printf "%s,%s,%s\n", pid, ppid, exe }'
+
+.PHONY: node/process/list/native
+node/process/list/native: ##@node List running processes (deduped basenames)
+	@$(DOCKER) exec $(APP)_$(MAIN_NODE) ps -eo pid,ppid,user,stime,etime,stat,cmd --forest
+
+.PHONY: node/process/list/native/full
+node/process/list/native/full: | $(OUT) ## Export full process info
+	@$(DOCKER) exec $(APP)_$(MAIN_NODE) sh -c \
+	'ps -eo pid,ppid,uid,comm --no-headers' \
+	| awk '{pid=$$1; ppid=$$2; uid=$$3; exe=$$4; ex[pid]=exe; par[pid]=ppid; u[pid]=uid} \
+	       END{for (pid in ex){ pexe=ex[par[pid]]; if (pexe=="") pexe="-"; \
+	                            printf "%s,%s,%s\n", ex[pid], pexe, u[pid] }}' \
+	| sort -u
+	
 .PHONY: rest/audit/config
 rest/audit/config: ##@rest Get config
 	$(CURL) $(CURL_OPTS) $(API_ENDPOINT)/settings/audit \
